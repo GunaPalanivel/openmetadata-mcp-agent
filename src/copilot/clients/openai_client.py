@@ -30,7 +30,7 @@ import pybreaker
 from openai import AsyncOpenAI
 
 from copilot.config import get_settings
-from copilot.middleware.error_envelope import LlmInvalidOutput, LlmUnavailable
+from copilot.middleware.error_envelope import LlmUnavailable  # LlmInvalidOutput used in P2-04 impl
 from copilot.observability import get_logger
 
 log = get_logger(__name__)

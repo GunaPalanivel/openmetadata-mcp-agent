@@ -13,8 +13,8 @@ data-ai-sdk → SSE → {OM_HOST}/mcp → OM MCP Server (Java)
 ```bash
 # .env file
 AI_SDK_HOST=http://localhost:8585
-AI_SDK_TOKEN=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...
-OPENAI_API_KEY=sk-...  # or ANTHROPIC_API_KEY
+AI_SDK_TOKEN=<paste-bot-jwt-from-OM-UI-Settings-Bots>  # gitleaks:allow
+OPENAI_API_KEY=<paste-from-platform.openai.com>        # gitleaks:allow
 ```
 
 ## SDK Setup

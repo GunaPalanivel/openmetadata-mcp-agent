@@ -14,11 +14,15 @@
 
 from __future__ import annotations
 
+from typing import cast
+
 from fastapi import FastAPI
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
+from starlette.requests import Request
+from starlette.responses import Response
 
 
 def build_limiter() -> Limiter:
@@ -33,4 +37,10 @@ def attach_limiter(app: FastAPI, limiter: Limiter) -> None:
     """Attach the limiter to the FastAPI app."""
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
-    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    # slowapi's handler signature is narrower than FastAPI's exception_handler
+    # type stub expects; cast to the broader Starlette signature.
+    handler = cast(
+        "type[Response]",
+        _rate_limit_exceeded_handler,
+    )
+    app.add_exception_handler(RateLimitExceeded, handler)  # type: ignore[arg-type]

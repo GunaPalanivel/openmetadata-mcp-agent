@@ -29,7 +29,7 @@ from typing import Any
 import pybreaker
 
 from copilot.config import get_settings
-from copilot.middleware.error_envelope import McpAuthFailed, McpUnavailable
+from copilot.middleware.error_envelope import McpUnavailable  # McpAuthFailed used in P1-03 impl
 from copilot.observability import get_logger
 
 log = get_logger(__name__)

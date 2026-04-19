@@ -21,10 +21,9 @@ from __future__ import annotations
 from uuid import UUID, uuid4
 
 import structlog
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.types import ASGIApp
 
 REQUEST_ID_HEADER = "X-Request-Id"
 
@@ -36,10 +35,7 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
     otherwise generates a new UUID v4.
     """
 
-    def __init__(self, app: ASGIApp) -> None:
-        super().__init__(app)
-
-    async def dispatch(self, request: Request, call_next: BaseHTTPMiddleware) -> Response:  # type: ignore[override]
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         request_id = self._extract_or_generate(request)
         request.state.request_id = request_id
         structlog.contextvars.clear_contextvars()

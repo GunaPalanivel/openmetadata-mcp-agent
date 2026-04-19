@@ -23,14 +23,14 @@ P1-04 wires the LangGraph agent.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from copilot.middleware.error_envelope import _envelope  # type: ignore[attr-defined]
+from copilot.middleware.error_envelope import _envelope
 from copilot.models.chat import ErrorCode
 
 router = APIRouter(tags=["chat"])
@@ -58,7 +58,7 @@ class ChatCancelRequest(BaseModel):
 
 
 @router.post("/chat", summary="Submit a chat message")
-async def post_chat(request: Request, body: ChatRequest) -> JSONResponse:
+async def post_chat(request: Request, _body: ChatRequest) -> JSONResponse:
     """TODO P1-04: wire to services.agent.run_chat_turn().
 
     For now, returns a structured 'not_implemented' envelope so clients
@@ -68,13 +68,13 @@ async def post_chat(request: Request, body: ChatRequest) -> JSONResponse:
 
 
 @router.post("/chat/confirm", summary="Confirm a pending write proposal")
-async def post_chat_confirm(request: Request, body: ChatConfirmRequest) -> JSONResponse:
+async def post_chat_confirm(request: Request, _body: ChatConfirmRequest) -> JSONResponse:
     """TODO P2-12: wire to services.agent.confirm_proposal()."""
     return _envelope(ErrorCode.NOT_IMPLEMENTED, request)
 
 
 @router.post("/chat/cancel", summary="Cancel the current chat session")
-async def post_chat_cancel(request: Request, body: ChatCancelRequest) -> JSONResponse:
+async def post_chat_cancel(_request: Request, body: ChatCancelRequest) -> JSONResponse:
     """TODO P2-12: wire to services.agent.cancel_session()."""
     # Even the "no-op cancel" is stubbed for now; once sessions exist we'll
     # actually clear the LangGraph state.
@@ -83,6 +83,6 @@ async def post_chat_cancel(request: Request, body: ChatCancelRequest) -> JSONRes
         content={
             "session_id": str(body.session_id),
             "cancelled": True,
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": datetime.now(UTC).isoformat(),
         },
     )

@@ -22,8 +22,9 @@ Per .idea/Plan/Architecture/APIContract.md:
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import uvicorn
@@ -44,7 +45,7 @@ from copilot.observability.metrics import render_prometheus_text
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):  # noqa: ARG001 (FastAPI requires this signature)
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     """Lifespan: configure observability at startup; nothing to clean up."""
     configure_observability()
     log = get_logger(__name__)
@@ -85,13 +86,13 @@ def create_app() -> FastAPI:
     register_envelope_handlers(app)
 
     @app.get("/api/v1/healthz", tags=["system"])
-    async def healthz(request: Request) -> dict[str, Any]:
+    async def healthz(_request: Request) -> dict[str, Any]:
         """Liveness probe. Returns 200 if the process is up."""
         # Phase 1: no upstream checks yet; OM/OpenAI checks land in P2.
         return {
             "status": "ok",
             "version": __version__,
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": datetime.now(UTC).isoformat(),
             "checks": {"app": {"ok": True}},
         }
 
