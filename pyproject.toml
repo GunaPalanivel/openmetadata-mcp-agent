@@ -42,7 +42,7 @@ dependencies = [
     "data-ai-sdk[langchain]==0.1.2",
 
     # LangGraph orchestration
-    "langgraph>=0.2.0,<0.3.0",
+    "langgraph>=0.2.0,<1.2.0",
     "langchain-openai>=0.2.0,<0.3.0",
 
     # OpenAI direct (for typed responses + circuit-breaker wrapping)
