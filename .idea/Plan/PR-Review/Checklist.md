@@ -1,86 +1,66 @@
 # PR Review Checklist
 
-## For OMH-GSA (Reviewer) — Use on Every PR
+Walk this checklist on every PR before approving. Skip sections that don't apply (e.g., skip "AI/ML Security" if the PR only touches docs).
 
-### Code Quality
+## Basics
 
+- [ ] `pre-commit run --all-files` is clean (author confirms, no `--no-verify`)
 - [ ] Code builds without errors
 - [ ] No unused imports or dead code
-- [ ] Functions have type hints (Python) / TypeScript types
-- [ ] Variable/function names are descriptive
+- [ ] Type hints on all Python signatures; no `any` / `as any` in TypeScript
+- [ ] Names are descriptive (`classify_columns` not `process`, `is_active` not `flag`)
 - [ ] No hardcoded secrets, tokens, or URLs
-- [ ] Error handling covers expected edge cases
-- [ ] Logging present at INFO level for key operations
-- [ ] Author confirms `pre-commit run --all-files` is clean locally (no `--no-verify` was used)
-
-### Tests
-
-- [ ] New code has unit tests
-- [ ] Tests cover happy path + at least 1 edge case
-- [ ] All existing tests still pass
-- [ ] Integration test added if touching MCP client or agent
-
-### Documentation
-
+- [ ] No `console.log` / `print()` in production paths
 - [ ] Functions have docstrings
-- [ ] README updated if new setup steps needed
-- [ ] API endpoints documented (if applicable)
-- [ ] Architecture docs updated if design changed
 
-### OM Alignment
+## Architecture
 
-- [ ] Uses `data-ai-sdk` for MCP interactions (not raw HTTP)
-- [ ] Auth handled via environment variables (not hardcoded)
-- [ ] MCP tool params match `tools.json` schema exactly
-- [ ] UI follows OM design language (colors, typography)
+Code lives in the right layer. Quick grep to verify:
 
-### Security
-
-- [ ] No secrets in commits (check `.env` not committed)
-- [ ] JWT tokens not logged at INFO level
-- [ ] Input validation on user-facing endpoints
-- [ ] No SQL injection vectors (if applicable)
-
-### Architecture Integrity Review (per Feature-Dev SKILL Phase 7)
-
-- [ ] No business logic in `src/copilot/api/` (greppable: no `if confidence`, no `openai.`, no `client.mcp` imports)
-- [ ] No HTTP types in `src/copilot/services/` (no `HTTPException`, no `Request`, no `Response`)
-- [ ] No business rules in `src/copilot/clients/` (clients only build req → call SDK → map to model → raise typed exception)
-- [ ] No N+1 patterns (batch where possible)
+- [ ] No business logic in `src/copilot/api/` (no `if confidence`, no `openai.`, no `client.mcp`)
+- [ ] No HTTP types in `src/copilot/services/` (no `HTTPException`, `Request`, `Response`)
+- [ ] No business rules in `src/copilot/clients/` (clients: build request, call SDK, map response, raise typed error)
 - [ ] `tests/architecture/test_layer_imports.py` passes
 
-### Resilience Review (per [Project/NFRs.md §The 5 Things AI Never Adds](../Project/NFRs.md))
+## Resilience
 
-- [ ] Every external HTTP/SDK call has explicit `timeout=` (connect + read)
-- [ ] Every external call wrapped with `@retry` (`tenacity`) — exponential + jitter
-- [ ] Every external call wrapped with a `pybreaker.CircuitBreaker`
-- [ ] Circuit-breaker-open path returns the right structured error envelope (`om_unavailable` / `llm_unavailable` / `github_unavailable`)
-- [ ] No `requests.*` (use `httpx`); no bare `openai.chat.completions.create()` (use the wrapped client)
-- [ ] `tests/integration/test_*_resilience.py` covers each circuit's failure + recovery path
+Every external call (MCP, LLM, GitHub) needs three things:
 
-### Observability Review (per [Project/NFRs.md §NFR-06](../Project/NFRs.md))
+- [ ] Explicit `timeout=` (connect + read)
+- [ ] `@retry` with exponential backoff + jitter (`tenacity`)
+- [ ] `pybreaker.CircuitBreaker` wrapping the call
+- [ ] Circuit-breaker-open path returns structured error envelope (`om_unavailable`, `llm_unavailable`, etc.)
+- [ ] No `requests.*` anywhere (use `httpx`); no bare `openai.chat.completions.create()`
+
+## Observability
 
 - [ ] No `print()` (ruff rule T201)
-- [ ] No bare `logging.*` (only `structlog` + the redaction processor)
-- [ ] Every service entry/exit has a structlog line
-- [ ] `request_id` propagated end-to-end (`structlog.contextvars`)
-- [ ] New metrics added are exposed on `GET /api/v1/metrics`
-- [ ] Sensitive data (secrets, prompts, tool args containing user content) NEVER logged
+- [ ] No bare `logging.*` (only `structlog` with redaction processor)
+- [ ] Service entry/exit has a structlog line with `request_id`
+- [ ] Sensitive data (secrets, prompts, user content) never logged
+- [ ] New metrics exposed on `GET /api/v1/metrics` if applicable
 
-### AI/ML Security Review — Module G (per [Security/PromptInjectionMitigation.md](../Security/PromptInjectionMitigation.md))
+## AI/ML Security
 
-- [ ] Any new code that fetches catalog content into an LLM prompt calls `services.prompt_safety.neutralize(field, max_len=...)`
-- [ ] Any new tool added to the LLM's available set is added to the `ALLOWED_TOOLS` set in `services/agent.py`
-- [ ] Any new write tool (creates/mutates entities or external resources) has `risk_level` set to `soft_write` or `hard_write` and goes through the HITL confirmation gate
-- [ ] LLM JSON output is parsed via `ToolCallProposal.model_validate(...)` before any tool execution
-- [ ] No `pickle`, `joblib`, `yaml.load(unsafe)`, `eval`, `exec`, or `os.system` introduced
-- [ ] `tests/security/test_prompt_injection.py` still covers all 5 canonical patterns; new tests added for any new prompt assembly point
+Only applies to PRs that touch LLM prompts, tool registration, or catalog content flowing into prompts.
 
-### Merge Criteria
+- [ ] Catalog content flowing into prompts goes through `services.prompt_safety.neutralize()`
+- [ ] New tools added to `ALLOWED_TOOLS` in `services/agent.py`
+- [ ] Write tools have `risk_level` set (`soft_write` / `hard_write`) and go through HITL confirmation
+- [ ] LLM output parsed via `ToolCallProposal.model_validate()` before execution
+- [ ] No `pickle`, `joblib`, `yaml.load(unsafe)`, `eval`, `exec`, or `os.system`
+- [ ] `tests/security/test_prompt_injection.py` still covers all 5 patterns
 
-- [ ] All checklist sections above satisfied
-- [ ] CI is green (lint, types, tests, pip-audit, bandit, gitleaks per [Security/CIHardening.md](../Security/CIHardening.md))
-- [ ] At least 1 approval from OMH-GSA
-- [ ] No merge conflicts
-- [ ] Branch is rebased on latest `main`
-- [ ] If this PR is the last for a phase: corresponding [Validation/QualityGates.md](../Validation/QualityGates.md) gates all green
+## Tests
+
+- [ ] New code has tests (happy path + at least one failure case)
+- [ ] All existing tests pass (`make test`)
+- [ ] Integration test added if touching MCP client or agent
+- [ ] Coverage stays above 70% on `src/copilot/`
+
+## Merge
+
+- [ ] CI is green (lint, types, tests, security scan, secret scan)
+- [ ] At least 1 approving review
+- [ ] No merge conflicts, branch rebased on `main`
+- [ ] If last PR in a phase: [QualityGates.md](../Validation/QualityGates.md) gates are green

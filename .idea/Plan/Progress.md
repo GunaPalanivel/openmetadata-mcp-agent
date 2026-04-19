@@ -14,11 +14,11 @@ Per-person, per-phase progress on every task in [TaskSync.md](./TaskSync.md). On
 
 PRs get a reviewer requested for you by `.github/workflows/auto-assign-reviewer.yml`:
 
-| Author | Reviewer requested |
-| --- | --- |
-| @PriyankaSen0902, @aravindsai003, @5009226-bhawikakumari | @GunaPalanivel |
-| @GunaPalanivel | @PriyankaSen0902 |
-| Outside contributor (forks, community) | @PriyankaSen0902 |
+| Author                                                   | Reviewer requested |
+| -------------------------------------------------------- | ------------------ |
+| @PriyankaSen0902, @aravindsai003, @5009226-bhawikakumari | @GunaPalanivel     |
+| @GunaPalanivel                                           | @PriyankaSen0902   |
+| Outside contributor (forks, community)                   | @PriyankaSen0902   |
 
 Backup: `.github/CODEOWNERS` requests @GunaPalanivel by default if the workflow is disabled.
 
@@ -32,12 +32,12 @@ Each row uses the same 8-step lifecycle. Check the boxes inline:
 
 ## Status legend
 
-| Symbol | Meaning |
-| --- | --- |
-| `[ ]` | Not started |
-| `[/]` | In progress |
-| `[x]` | Done |
-| `[!]` | Blocked (add a note next to the row) |
+| Symbol | Meaning                              |
+| ------ | ------------------------------------ |
+| `[ ]`  | Not started                          |
+| `[/]`  | In progress                          |
+| `[x]`  | Done                                 |
+| `[!]`  | Blocked (add a note next to the row) |
 
 ---
 
@@ -47,27 +47,27 @@ Each row uses the same 8-step lifecycle. Check the boxes inline:
 
 ### @GunaPalanivel
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P0-01 | Post intent comment on upstream #26645 | upstream | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P0-02 | Post intent comment on upstream #26608 | upstream | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P0-03 | Create repo `GunaPalanivel/openmetadata-mcp-agent` | done | n/a | [x] | [x] | [x] | [x] | [x] | [x] | [x] | [x] |
-| P0-04 | Redeem OpenAI API credits | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P0-05 | Generate OpenAI API key, save in `.env` | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P0-06 | Add team as collaborators (3 invites) | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P0-07 | Drop `CLAUDE.md` template into repo root | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P0-08 | Star `open-metadata/OpenMetadata` (all 4) | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P0-09 | Read Discovery + NFRs + CodingStandards + PromptInjection | #__ | n/a | [x] | [x] | [x] | [x] | [x] | [x] | [x] | [x] |
-| P0-10 | Install pre-commit hooks (`pre-commit install` + `run --all-files`) | n/a | n/a | [x] | [x] | [x] | [x] | [x] | [x] | [x] | [x] |
+| Task ID | Description                                                         | Issue                                                                                                | PR    | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P0-01   | Post intent comment on upstream #26645                              | [#26645 comment](https://github.com/open-metadata/OpenMetadata/issues/26645#issuecomment-4275961194) | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-02   | Post intent comment on upstream #26608                              | [#26608 comment](https://github.com/open-metadata/OpenMetadata/issues/26608#issuecomment-4275961984) | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-03   | Create repo `GunaPalanivel/openmetadata-mcp-agent`                  | done                                                                                                 | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-04   | Redeem OpenAI API credits (deferred until P2-01)                    | n/a                                                                                                  | n/a   | [!] | [!] | [!] | [!] | [!] | [!]       | [!] | [!] |
+| P0-05   | Generate OpenAI API key, save in `.env` (deferred with P0-04)       | n/a                                                                                                  | n/a   | [!] | [!] | [!] | [!] | [!] | [!]       | [!] | [!] |
+| P0-06   | Add team as collaborators (3 invites)                               | done                                                                                                 | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-07   | Drop `CLAUDE.md` template into repo root                            | done                                                                                                 | done  | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-08   | Star `open-metadata/OpenMetadata` (all 4)                           | done                                                                                                 | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-09   | Read Discovery + NFRs + CodingStandards + PromptInjection           | #\_\_                                                                                                | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-10   | Install pre-commit hooks (`pre-commit install` + `run --all-files`) | n/a                                                                                                  | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
 
 ### Per-person setup (every contributor)
 
-| Owner | P0-10 Install pre-commit hooks |
-| --- | --- |
-| @GunaPalanivel | [x] |
-| @PriyankaSen0902 | [ ] |
-| @aravindsai003 | [ ] |
-| @5009226-bhawikakumari | [ ] |
+| Owner                  | P0-10 Install pre-commit hooks |
+| ---------------------- | ------------------------------ |
+| @GunaPalanivel         | [x]                            |
+| @PriyankaSen0902       | [ ]                            |
+| @aravindsai003         | [ ]                            |
+| @5009226-bhawikakumari | [ ]                            |
 
 ---
 
@@ -89,43 +89,43 @@ Each row uses the same 8-step lifecycle. Check the boxes inline:
 
 ### @GunaPalanivel
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P1-01 | Init repo with `pyproject.toml` and Phase 1 deps | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-02 | Create project structure (`src/copilot/...`, `ui/`, `tests/`) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-03 | Implement MCP client `search_metadata` happy path | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-04 | LangGraph agent skeleton (NL → intent → tool → respond) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-05 | Verify smoke: search returns data | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-06 | Review all Phase 1 PRs | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Description                                                   | Issue                                                                       | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ------------------------------------------------------------- | --------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P1-01   | Init repo with `pyproject.toml` and Phase 1 deps              | [#14](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/14)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-02   | Create project structure (`src/copilot/...`, `ui/`, `tests/`) | [#15](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/15)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-03   | Implement MCP client `search_metadata` happy path             | [#16](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/16)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-04   | LangGraph agent skeleton (NL -> intent -> tool -> respond)    | [#17](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/17)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-05   | Verify smoke: search returns data                             | [#18](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/18)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-06   | Review all Phase 1 PRs                                        | [#19](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/19)    | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### @PriyankaSen0902
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P1-07 | Study `data-ai-sdk` + `langchain-openai`, document tool schemas | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-08 | Map all 12 MCP tools to governance use cases (update audit doc) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-09 | Typed wrapper for top 6 tools (Pydantic params + responses) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-10 | 10+ unit tests for MCP client wrapper (mock responses) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Description                                                     | Issue                                                                       | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | --------------------------------------------------------------- | --------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P1-07   | Study `data-ai-sdk` + `langchain-openai`, document tool schemas | [#20](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/20)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-08   | Map all 12 MCP tools to governance use cases (update audit doc) | [#21](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/21)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-09   | Typed wrapper for top 6 tools (Pydantic params + responses)     | [#22](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/22)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-10   | 10+ unit tests for MCP client wrapper (mock responses)          | [#23](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/23)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### @aravindsai003
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P1-11 | Local OM at `:8585` via `docker/development/` | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-12 | Verify Swagger; generate Bot JWT | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-13 | Pre-seed OM with 50+ realistic tables | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-14 | Scaffold React chat UI (Vite + React) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-15 | Document setup in `README.md` (clone to run in 5 min) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Description                                           | Issue                                                                       | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ----------------------------------------------------- | --------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P1-11   | Local OM at `:8585` via `docker/development/`         | [#24](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/24)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-12   | Generate Bot JWT, share privately                     | [#25](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/25)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-13   | Pre-seed OM with 50+ realistic tables                 | [#26](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/26)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-14   | Confirm UI scaffold runs on `:3000`                   | [#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-15   | Document setup in `README.md` (clone to run in 5 min) | [#28](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/28)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### @5009226-bhawikakumari
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P1-16 | Write project `README.md` (1-liner, features, setup) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-17 | Daily monitor unassigned hackathon GFIs | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-18 | Add AI disclosure to `README.md` | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-19 | Draft demo narrative outline (refresh `Demo/Narrative.md`) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P1-20 | Daily refresh `Demo/CompetitiveMatrix.md` | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Description                                                | Issue                                                                       | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P1-16   | Polish public README (1-liner, features, setup)            | [#29](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/29)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-17   | Daily monitor unassigned hackathon GFIs                    | [#30](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/30)    | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-18   | Add AI disclosure to `README.md`                           | [#31](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/31)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-19   | Draft demo narrative outline (refresh `Demo/Narrative.md`) | [#32](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/32)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-20   | Daily refresh `Demo/CompetitiveMatrix.md`                  | [#33](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/33)    | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### Phase 1 Exit Gate
 
@@ -157,44 +157,44 @@ Each row uses the same 8-step lifecycle. Check the boxes inline:
 
 ### @GunaPalanivel
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P2-01 | Auto-classification: scan + LLM classify + HITL + `patch_entity` | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-02 | Lineage impact analysis report with Tier warnings | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-03 | Multi-step agent: chain 3+ tool calls per turn | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-04 | FastAPI `POST /chat` wired to LangGraph agent | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-05 | Review all Phase 2 PRs (full PR-Review checklist) | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Description                                                      | Issue | PR    | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ---------------------------------------------------------------- | ----- | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P2-01   | Auto-classification: scan + LLM classify + HITL + `patch_entity` | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-02   | Lineage impact analysis report with Tier warnings                | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-03   | Multi-step agent: chain 3+ tool calls per turn                   | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-04   | FastAPI `POST /chat` wired to LangGraph agent                    | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-05   | Review all Phase 2 PRs (full PR-Review checklist)                | #\_\_ | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### @PriyankaSen0902
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P2-06 | NL query engine: text → intent → tool → Markdown | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-07 | Governance summary: tag coverage %, PII %, unclassified count | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-08 | Retry + circuit breaker + structured error envelope on MCP calls | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-09 | Integration tests including circuit-breaker-open paths | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-10b | `services/prompt_safety.neutralize` + 5-pattern test file | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-11b | `observability/redact.py` + `middleware/error_envelope.py` | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Description                                                      | Issue | PR    | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ---------------------------------------------------------------- | ----- | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P2-06   | NL query engine: text → intent → tool → Markdown                 | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-07   | Governance summary: tag coverage %, PII %, unclassified count    | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-08   | Retry + circuit breaker + structured error envelope on MCP calls | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-09   | Integration tests including circuit-breaker-open paths           | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-10b  | `services/prompt_safety.neutralize` + 5-pattern test file        | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-11b  | `observability/redact.py` + `middleware/error_envelope.py`       | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### @aravindsai003
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P2-10 | Connect React UI to FastAPI (real chat responses) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-11 | Render structured responses (markdown + sanitize, no innerHTML) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-12 | HITL confirmation modal (tool name, risk, FQN list, Confirm/Cancel) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-13 | E2E test including the prompt-injection demo flow | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-13b | Build + commit `seed/customer_db.json` and `scripts/load_seed.py` | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Description                                                         | Issue | PR    | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ------------------------------------------------------------------- | ----- | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P2-10   | Connect React UI to FastAPI (real chat responses)                   | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-11   | Render structured responses (markdown + sanitize, no innerHTML)     | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-12   | HITL confirmation modal (tool name, risk, FQN list, Confirm/Cancel) | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-13   | E2E test including the prompt-injection demo flow                   | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-13b  | Build + commit `seed/customer_db.json` and `scripts/load_seed.py`   | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### @5009226-bhawikakumari
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P2-14 | Claim + fix a GFI issue if an unassigned one appears | upstream | upstream | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-15 | README Mermaid architecture + trust-boundary diagram | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-16 | Refresh `Demo/Narrative.md` with measurable outcomes | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-17 | Document all 12 MCP tools used in README (cite audit) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P2-18 | Daily refresh `Demo/CompetitiveMatrix.md` | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Description                                           | Issue    | PR       | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ----------------------------------------------------- | -------- | -------- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P2-14   | Claim + fix a GFI issue if an unassigned one appears  | upstream | upstream | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-15   | README Mermaid architecture + trust-boundary diagram  | #\_\_    | #\_\_    | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-16   | Refresh `Demo/Narrative.md` with measurable outcomes  | #\_\_    | #\_\_    | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-17   | Document all 12 MCP tools used in README (cite audit) | #\_\_    | #\_\_    | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-18   | Daily refresh `Demo/CompetitiveMatrix.md`             | #\_\_    | n/a      | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### Phase 2 Exit Gate
 
@@ -226,43 +226,43 @@ Each row uses the same 8-step lifecycle. Check the boxes inline:
 
 ### @GunaPalanivel
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P3-01 | Multi-MCP: connect GitHub MCP via `langchain-mcp-adapters` | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-02 | Cross-MCP: find PII tables → open GitHub issue per table | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-03 | Governance summary aggregation (coverage + tier distribution) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-04 | Security audit (no secrets, no debug logs, input validation) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-05 | Review all Phase 3 PRs | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Description                                                   | Issue | PR    | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ------------------------------------------------------------- | ----- | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P3-01   | Multi-MCP: connect GitHub MCP via `langchain-mcp-adapters`    | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-02   | Cross-MCP: find PII tables → open GitHub issue per table      | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-03   | Governance summary aggregation (coverage + tier distribution) | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-04   | Security audit (no secrets, no debug logs, input validation)  | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-05   | Review all Phase 3 PRs                                        | #\_\_ | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### @PriyankaSen0902
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P3-06 | Edge cases as structured error envelope | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-07 | structlog + redact processor + request_id propagation; no `print()` | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-08 | Coverage report >70% on `src/copilot/` | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-09 | Full hardened GitHub Actions CI per `Security/CIHardening.md` | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-09b | `/metrics` endpoint exposing the 4 Golden Signals | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Description                                                         | Issue | PR    | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ------------------------------------------------------------------- | ----- | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P3-06   | Edge cases as structured error envelope                             | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-07   | structlog + redact processor + request_id propagation; no `print()` | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-08   | Coverage report >70% on `src/copilot/`                              | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-09   | Full hardened GitHub Actions CI per `Security/CIHardening.md`       | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-09b  | `/metrics` endpoint exposing the 4 Golden Signals                   | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### @aravindsai003
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P3-10 | OM-native UI (`#7147E8`, Inter font, dark mode default) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-11 | Governance dashboard (tag coverage chart, PII summary cards) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-12 | Responsive layout for judging on different screens | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-13 | Loading + error states polished | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Description                                                  | Issue | PR    | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ------------------------------------------------------------ | ----- | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P3-10   | OM-native UI (`#7147E8`, Inter font, dark mode default)      | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-11   | Governance dashboard (tag coverage chart, PII summary cards) | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-12   | Responsive layout for judging on different screens           | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-13   | Loading + error states polished                              | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### @5009226-bhawikakumari
 
-| Task ID | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P3-14 | Run the 3-rehearsal protocol | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-15 | Record `demo/final_recording.mp4` (2 to 3 min, 1920x1080) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-16 | Record + verify `demo/backup_recording.mp4` | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-17 | Finalize README (GIF top, 3-cmd setup, AI disclosure, links) | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-18 | Verify clone-to-run on a clean machine | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P3-19 | Architecture + trust-boundary Mermaid embedded in README | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Description                                                  | Issue | PR    | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ------------------------------------------------------------ | ----- | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P3-14   | Run the 3-rehearsal protocol                                 | #\_\_ | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-15   | Record `demo/final_recording.mp4` (2 to 3 min, 1920x1080)    | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-16   | Record + verify `demo/backup_recording.mp4`                  | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-17   | Finalize README (GIF top, 3-cmd setup, AI disclosure, links) | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-18   | Verify clone-to-run on a clean machine                       | #\_\_ | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P3-19   | Architecture + trust-boundary Mermaid embedded in README     | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### Phase 3 Exit Gate
 
@@ -292,29 +292,29 @@ Each row uses the same 8-step lifecycle. Check the boxes inline:
 
 ### All team
 
-| Task ID | Owner | Description | Issue | PR | P | B | V1 | F | V2 | PR opened | R | M |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P4-00 | @GunaPalanivel | Run `Validation/PRR.md` PRR checklist end-to-end | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P4-01 | @5009226-bhawikakumari | Final README review | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P4-02 | @GunaPalanivel | Repo hygiene + `gitleaks detect` returns 0 findings | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P4-03 | @5009226-bhawikakumari | AI disclosure confirmed in README | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P4-03b | @GunaPalanivel | `SECURITY_AUDIT_2026-04-25.md` with SC-N status | #__ | #__ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P4-03c | @aravindsai003 | Demo machine pre-conditions checklist | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P4-04 | @GunaPalanivel | Submit hackathon form on WeMakeDevs | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P4-05 | @GunaPalanivel | Link demo video + repo in submission | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P4-06 | @5009226-bhawikakumari | Verify GFI PR status | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P4-07 | @GunaPalanivel | Comment submission link on #26645 + #26608 | upstream | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| P4-08 | All | Team retrospective within 48h | #__ | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| Task ID | Owner                  | Description                                         | Issue    | PR    | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ---------------------- | --------------------------------------------------- | -------- | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P4-00   | @GunaPalanivel         | Run `Validation/PRR.md` PRR checklist end-to-end    | #\_\_    | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P4-01   | @5009226-bhawikakumari | Final README review                                 | #\_\_    | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P4-02   | @GunaPalanivel         | Repo hygiene + `gitleaks detect` returns 0 findings | #\_\_    | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P4-03   | @5009226-bhawikakumari | AI disclosure confirmed in README                   | #\_\_    | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P4-03b  | @GunaPalanivel         | `SECURITY_AUDIT_2026-04-25.md` with SC-N status     | #\_\_    | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P4-03c  | @aravindsai003         | Demo machine pre-conditions checklist               | #\_\_    | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P4-04   | @GunaPalanivel         | Submit hackathon form on WeMakeDevs                 | #\_\_    | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P4-05   | @GunaPalanivel         | Link demo video + repo in submission                | #\_\_    | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P4-06   | @5009226-bhawikakumari | Verify GFI PR status                                | #\_\_    | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P4-07   | @GunaPalanivel         | Comment submission link on #26645 + #26608          | upstream | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P4-08   | All                    | Team retrospective within 48h                       | #\_\_    | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ---
 
 ## Snapshot per person (counts so far)
 
-| Owner | Phase 0 | Phase 1 | Phase 2 | Phase 3 | Phase 4 | Total |
-| --- | --- | --- | --- | --- | --- | --- |
-| @GunaPalanivel | 9 | 6 | 5 | 5 | 6 | 31 |
-| @PriyankaSen0902 | 0 | 4 | 6 | 5 | 0 | 15 |
-| @aravindsai003 | 0 | 5 | 5 | 4 | 1 | 15 |
-| @5009226-bhawikakumari | 0 | 5 | 5 | 6 | 3 | 19 |
+| Owner                  | Phase 0 | Phase 1 | Phase 2 | Phase 3 | Phase 4 | Total |
+| ---------------------- | ------- | ------- | ------- | ------- | ------- | ----- |
+| @GunaPalanivel         | 9       | 6       | 5       | 5       | 6       | 31    |
+| @PriyankaSen0902       | 0       | 4       | 6       | 5       | 0       | 15    |
+| @aravindsai003         | 0       | 5       | 5       | 4       | 1       | 15    |
+| @5009226-bhawikakumari | 0       | 5       | 5       | 6       | 3       | 19    |
 
 Update the counts above only if you add or remove rows.
