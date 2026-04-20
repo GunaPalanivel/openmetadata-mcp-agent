@@ -2,7 +2,7 @@
   "name": "@openmetadata-mcp-agent/ui",
   "private": true,
   "version": "0.1.0",
-  "description": "Chat UI for openmetadata-mcp-agent. React 18 + Vite 5 + TypeScript 5.",
+  "description": "Chat UI for openmetadata-mcp-agent. React 18 + Vite 8 + TypeScript 6.",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,22 +13,26 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.40.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-markdown": "^9.0.1",
-    "rehype-sanitize": "^6.0.0",
-    "@tanstack/react-query": "^5.40.0"
+    "react-markdown": "10.1.0",
+    "rehype-sanitize": "^6.0.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@typescript-eslint/eslint-plugin": "^7.13.0",
-    "@typescript-eslint/parser": "^7.13.0",
-    "@vitejs/plugin-react": "^4.3.0",
+    "@typescript-eslint/eslint-plugin": "8.58.2",
+    "@typescript-eslint/parser": "8.58.2",
+    "@vitejs/plugin-react": "6.0.1",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.34.2",
     "eslint-plugin-react-hooks": "^4.6.2",
-    "typescript": "^5.4.5",
-    "vite": "^5.2.13"
+    "typescript": "6.0.3",
+    "vite": "8.0.8"
+  },
+  "volta": {
+    "node": "20.19.0",
+    "npm": "10.8.2"
   }
 }

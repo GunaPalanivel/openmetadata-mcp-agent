@@ -99,7 +99,7 @@ test-integration:
 	pytest tests/integration -v -m integration
 
 test-security:
-	pytest tests/security -v -m security
+	pytest tests/security -v
 
 test-arch:
 	pytest tests/architecture -v
@@ -131,7 +131,7 @@ ci-local:
 	@$(MAKE) test-unit
 	@$(MAKE) test-security
 	@$(MAKE) test-arch
-	pip-audit --strict
+	pip-audit --strict --skip-editable . --progress-spinner off
 	bandit -r src/copilot -ll
 	@if [ -d "ui" ]; then cd ui && npm run build && npx tsc --noEmit; fi
 	@echo "All CI gates passed locally."

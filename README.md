@@ -134,7 +134,7 @@ We use the official `data-ai-sdk`'s typed `MCPTool` enum for the 7 wrapped tools
 - **LLM**: OpenAI GPT-4o-mini
 - **Resilience**: httpx + tenacity (retry) + pybreaker (circuit breaker) + slowapi (rate limit)
 - **Observability**: structlog (JSON) + prometheus-client + request_id propagation
-- **Frontend**: React 18 + Vite 5 + TypeScript 5 (strict mode, no `any`, no MUI)
+- **Frontend**: React 18 + Vite 8 + TypeScript 6 (strict mode, no `any`, no MUI)
 - **Testing**: pytest + pytest-asyncio + respx + Playwright (E2E)
 - **Lint/Type**: ruff + mypy --strict
 - **Security scanning**: pip-audit + bandit + gitleaks

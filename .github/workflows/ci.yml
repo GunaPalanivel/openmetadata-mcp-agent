@@ -137,12 +137,7 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev]"
       - name: pip-audit (CVE scan on installed deps)
-        # Phase 1 scaffold: don't fail the build on transitive-dep CVEs that
-        # dependabot is already opening PRs for (langchain-openai,
-        # langchain-text-splitters, etc.). Findings are reported as warnings
-        # so the team sees them; gate hardens to --strict in Phase 3 PRR.
-        continue-on-error: true
-        run: pip-audit --skip-editable --vulnerability-service osv
+        run: pip-audit --strict --skip-editable . --vulnerability-service osv
       - name: bandit (Python AST scan)
         run: bandit -r src/copilot -ll
       - name: License header check
@@ -176,11 +171,11 @@ jobs:
       - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8  # v4.0.2
         with:
           node-version: '20'
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
       - name: Install + build + typecheck
         working-directory: ui
-        # No package-lock.json yet (Phase 1 scaffold); use `npm install`.
-        # Replace with `npm ci` once we commit a lockfile.
         run: |
-          npm install --no-audit --no-fund
+          npm ci --no-audit --no-fund
           npm run build
           npx tsc --noEmit
