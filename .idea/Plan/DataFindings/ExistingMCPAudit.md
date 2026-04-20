@@ -6,20 +6,22 @@
 
 ## Tool Registry (All 12 Tools)
 
-| #   | Tool Name              | Java Class                         | Description                                                  | Governance Use                                |
-| --- | ---------------------- | ---------------------------------- | ------------------------------------------------------------ | --------------------------------------------- |
-| 1   | `search_metadata`      | `SearchMetadataTool` (454 LOC)     | Keyword search with OpenSearch DSL, pagination, aggregations | Tag coverage scan, find unclassified entities |
-| 2   | `semantic_search`      | `SemanticSearchTool` (280 LOC)     | Vector-based conceptual search using embeddings              | "Find tables about customer spending"         |
-| 3   | `get_entity_details`   | `GetEntityTool` (91 LOC)           | Get full entity by FQN                                       | Inspect entity for classification             |
-| 4   | `patch_entity`         | `PatchEntityTool` (63 LOC)         | JSON Patch on any entity                                     | **Apply tags, PII labels, descriptions**      |
-| 5   | `get_entity_lineage`   | `GetLineageTool` (~100 LOC)        | Upstream/downstream lineage traversal                        | **Impact analysis**                           |
-| 6   | `create_lineage`       | `LineageTool` (~80 LOC)            | Create lineage between entities                              | —                                             |
-| 7   | `create_glossary`      | `GlossaryTool` (~100 LOC)          | Create glossary                                              | Auto-generate governance glossary             |
-| 8   | `create_glossary_term` | `GlossaryTermTool` (~90 LOC)       | Create term in glossary                                      | Auto-generate governance terms                |
-| 9   | `get_test_definitions` | `TestDefinitionsTool` (~80 LOC)    | List test definitions                                        | —                                             |
-| 10  | `create_test_case`     | `CreateTestCaseTool` (~150 LOC)    | Create test case on table/column                             | Data quality governance                       |
-| 11  | `root_cause_analysis`  | `RootCauseAnalysisTool` (~300 LOC) | Upstream failure + downstream impact                         | **Root cause governance**                     |
-| 12  | `create_metric`        | `CreateMetricTool` (~250 LOC)      | Create KPI metrics                                           | Governance KPIs                               |
+> **Full governance mapping with PRD cross-references**: [ToolGovernanceMapping.md](./ToolGovernanceMapping.md)
+
+| #   | Tool Name              | Java Class                         | Description                                                  | Governance Use Case (PRD-aligned)                                                          |
+| --- | ---------------------- | ---------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| 1   | `search_metadata`      | `SearchMetadataTool` (454 LOC)     | Keyword search with OpenSearch DSL, pagination, aggregations | Find all untagged tables in a schema; compute tag-coverage % via aggregations **(C1, C4)** |
+| 2   | `semantic_search`      | `SemanticSearchTool` (280 LOC)     | Vector-based conceptual search using embeddings              | Discover PII-related tables by meaning ("customer spending") for audit **(C1, C2)**        |
+| 3   | `get_entity_details`   | `GetEntityTool` (91 LOC)           | Get full entity by FQN                                       | Inspect columns + existing tags before LLM classifies for PII **(C4, C3)**                 |
+| 4   | `patch_entity`         | `PatchEntityTool` (63 LOC)         | JSON Patch on any entity                                     | **Apply PII tag to a column after LLM classification confirms it (C1, C4)**                |
+| 5   | `get_entity_lineage`   | `GetLineageTool` (~100 LOC)        | Upstream/downstream lineage traversal                        | **Trace upstream/downstream before schema change → plain-English impact report (C1, C2)**  |
+| 6   | `create_lineage`       | `LineageTool` (~80 LOC)            | Create lineage between entities                              | Register new pipeline lineage so governance policies propagate to outputs **(C4)**         |
+| 7   | `create_glossary`      | `GlossaryTool` (~100 LOC)          | Create glossary                                              | Auto-generate "Data Governance" glossary for PII/sensitivity terms **(C4, C2)**            |
+| 8   | `create_glossary_term` | `GlossaryTermTool` (~90 LOC)       | Create term in glossary                                      | Create "PII — Personally Identifiable Information" term with definition **(C4, C2)**       |
+| 9   | `get_test_definitions` | `TestDefinitionsTool` (~80 LOC)    | List test definitions                                        | List available DQ tests to recommend appropriate checks for PII columns **(C4)**           |
+| 10  | `create_test_case`     | `CreateTestCaseTool` (~150 LOC)    | Create test case on table/column                             | Add "columnValuesToBeNotNull" test on PII columns for compliance **(C4)**                  |
+| 11  | `root_cause_analysis`  | `RootCauseAnalysisTool` (~300 LOC) | Upstream failure + downstream impact                         | **Trace upstream DQ failure causing dashboard data issues → remediation report (C1, C4)**  |
+| 12  | `create_metric`        | `CreateMetricTool` (~250 LOC)      | Create KPI metrics                                           | Create "TagCoveragePercent" KPI tracking governance health over time **(C1, C4)**          |
 
 ## Tool Registration Mechanism
 
