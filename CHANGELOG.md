@@ -4,6 +4,10 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Verified
+
+- **P1-02 / [#15](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/15)** — Phase 1 repo skeleton verification: every directory from the issue body (`src/copilot/`, `ui/`, `tests/`, `scripts/`, `infrastructure/`, `docs/`, `seed/`) and from the TaskSync.md P1-02 tree exists on disk. The intentional drift from the original flat `src/copilot/` layout to the layered layout (`api/` / `services/` / `clients/` / `models/` / `middleware/` / `config/` / `observability/`) is documented, justified against [`Architecture/Overview.md`](.idea/Plan/Architecture/Overview.md) and [`Architecture/CodePatterns.md`](.idea/Plan/Architecture/CodePatterns.md), and enforced in CI by [`tests/architecture/test_layer_imports.py`](tests/architecture/test_layer_imports.py). Feature-Dev spec: [`.idea/Plan/FeatureDev/Phase1RepoSkeleton.md`](.idea/Plan/FeatureDev/Phase1RepoSkeleton.md). Governance module deferred to P1-08 / [#21](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/21).
+
 ## [0.1.0] - 2026-04-19
 
 ### Added

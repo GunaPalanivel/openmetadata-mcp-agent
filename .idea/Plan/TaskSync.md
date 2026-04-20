@@ -52,22 +52,30 @@ We'll link the final submission + demo video before the Apr 26 deadline.
 - [ ] `P1-01` Init `openmetadata-mcp-agent` repo with `pyproject.toml`
   - Deps (Phase 1): `data-ai-sdk[langchain]`, `langchain-openai`, `langgraph`, `fastapi`, `uvicorn`
   - Note: `data-ai-sdk[langchain]` already provides `client.mcp.as_langchain_tools()`, so `langchain-mcp-adapters` is **not** needed for OM. Add it in Phase 3 only when wiring the GitHub MCP server.
-- [ ] `P1-02` Create basic project structure:
+- [x] `P1-02` Create basic project structure (see [FeatureDev/Phase1RepoSkeleton.md](./FeatureDev/Phase1RepoSkeleton.md) for planned-vs-actual, drift map, and verification):
   ```
   openmetadata-mcp-agent/
   ├── pyproject.toml
   ├── README.md
   ├── .env.example
   ├── .gitignore
-  ├── src/copilot/
+  ├── src/copilot/                  ← layered per Architecture/Overview.md + CodePatterns.md
   │   ├── __init__.py
-  │   ├── agent.py          ← LangGraph agent
-  │   ├── mcp_client.py     ← data-ai-sdk wrapper
-  │   ├── governance.py     ← Classification logic
-  │   └── api.py            ← FastAPI endpoints
-  ├── ui/                   ← React chat (Phase 2)
-  └── tests/
+  │   ├── api/                      ← FastAPI routes (thin orchestrators)
+  │   ├── services/                 ← business logic (agent, governance, prompt_safety)
+  │   ├── clients/                  ← external I/O (om_mcp = data-ai-sdk wrapper, openai_client)
+  │   ├── models/                   ← Pydantic v2 models
+  │   ├── middleware/               ← request_id / error_envelope / rate_limit
+  │   ├── config/                   ← Pydantic Settings (SecretStr, NFR knobs)
+  │   └── observability/            ← structlog + Prometheus + PII redaction
+  ├── ui/                           ← React chat (Phase 2)
+  ├── tests/                        ← unit / security / architecture (layer-boundary)
+  ├── scripts/
+  ├── infrastructure/
+  ├── docs/
+  └── seed/
   ```
+  Layer boundaries are enforced in CI by [tests/architecture/test_layer_imports.py](../../tests/architecture/test_layer_imports.py). The originally-planned flat tree (`agent.py` / `mcp_client.py` / `governance.py` / `api.py` at `src/copilot/` top level) is preserved in [FeatureDev/Phase1RepoSkeleton.md §1](./FeatureDev/Phase1RepoSkeleton.md); `governance.py` itself is intentionally deferred to `P1-08` / [#21](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/21) where it will land as `src/copilot/services/governance.py`.
 - [ ] `P1-03` Implement MCP client (`mcp_client.py`): connect to OM, call `search_metadata`
 - [ ] `P1-04` Build LangGraph agent skeleton: NL input → intent classify → tool select → respond
 - [ ] `P1-05` Verify: `python -c "from copilot.mcp_client import ...; search('tables')"` returns data
