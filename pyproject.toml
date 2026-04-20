@@ -46,7 +46,7 @@ dependencies = [
     "langchain-openai>=0.2.0,<0.3.0",
 
     # OpenAI direct (for typed responses + circuit-breaker wrapping)
-    "openai>=1.50.0,<2.0.0",
+    "openai>=1.50.0,<3.0.0",
 
     # FastAPI + ASGI
     "fastapi>=0.110.0,<0.120.0",
