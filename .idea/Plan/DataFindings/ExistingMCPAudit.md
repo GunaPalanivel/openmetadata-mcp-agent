@@ -53,13 +53,29 @@ class MCPTool(StrEnum):
 
 **How to call**: `client.mcp.call_tool(MCPTool.SEARCH_METADATA, {"query": "customers"})`
 
-### 1 String-Callable Tool — reachable via `client.mcp.call_tool("name", args)`
+### 1 SDK-Unreachable Tool — requires direct JSON-RPC
 
 | Tool | Why not in enum? | How to call |
 |------|-----------------|-------------|
-| `create_metric` | Not yet added to `MCPTool` StrEnum in SDK v0.1.2 | `client.mcp.call_tool("create_metric", {...})` |
+| `create_metric` | Not in `MCPTool` StrEnum in SDK v0.1.2 | Direct HTTP POST to `/mcp` (see below) |
 
-**Implication for our agent**: The 1 string-only tool (`create_metric`) won't appear in `client.mcp.as_langchain_tools()` filtered by `include=[MCPTool.X]`. We need a thin Python wrapper registered as a custom LangChain tool (`@tool` decorator). All other 11 tools work natively.
+> ⚠️ **SDK limitation**: `call_tool()` internally does `name.value` which only works on `MCPTool` enum members. Passing a raw string like `"create_metric"` raises `AttributeError`. The OpenAI executor path (`create_tool_executor`) does `MCPTool(tool_name)` which raises `ValueError` for unrecognized names. **`create_metric` is not reachable through any public SDK method in v0.1.2.**
+
+**Workaround — direct JSON-RPC call**:
+```python
+import httpx
+
+result = httpx.post(
+    f"{OM_MCP_URL}/mcp",
+    headers={"Authorization": f"Bearer {BOT_JWT}"},
+    json={
+        "jsonrpc": "2.0", "id": 1, "method": "tools/call",
+        "params": {"name": "create_metric", "arguments": {...}}
+    }
+)
+```
+
+**Implication for our agent**: `create_metric` needs a custom `@tool`-decorated LangChain wrapper that bypasses the SDK and hits the JSON-RPC endpoint directly. All other 11 tools work natively via `client.mcp.as_langchain_tools()`.
 
 ---
 
@@ -196,6 +212,8 @@ class MCPTool(StrEnum):
 | `toEntity.type` | string | **Yes** | — | Entity type of destination |
 | `toEntity.id` | string | **Yes** | — | UUID of destination entity |
 
+> **Where to get entity UUIDs**: Call `get_entity_details(entityType, fqn)` first — the UUID is in `result.data["id"]`.
+
 **Response shape**: `ToolCallResult(success=True, data={...}, error=None)` where `data` contains created lineage edge.
 
 ---
@@ -291,10 +309,10 @@ class MCPTool(StrEnum):
 
 ---
 
-### Tool 12: `create_metric` ⚠️ STRING-ONLY
+### Tool 12: `create_metric` ⚠️ SDK-UNREACHABLE
 
 > **Source**: [tools.json L472–L557](https://github.com/open-metadata/OpenMetadata/blob/main/openmetadata-mcp/src/main/resources/json/data/mcp/tools.json)
-> **Enum**: ❌ Not in `MCPTool` — call via `client.mcp.call_tool("create_metric", {...})`
+> **Enum**: ❌ Not in `MCPTool` — **not reachable via any SDK method**. Must call via direct JSON-RPC HTTP POST to `/mcp` (see [Workaround](#1-sdk-unreachable-tool--requires-direct-json-rpc) above).
 
 **Description**: Creates a Metric entity (KPI). Supports SQL, Python, Java, JavaScript expressions.
 
