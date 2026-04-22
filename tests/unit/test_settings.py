@@ -13,6 +13,10 @@ from pydantic import SecretStr
 
 from copilot.config.settings import Settings, assert_runtime_env_ready
 
+# Non-JWT-shaped value: scanners (e.g. GitGuardian) flag eyJ... three-segment tokens in PRs.
+# Runtime checks only need a non-placeholder secret (see _is_placeholder_secret).
+_UNIT_TEST_OM_SDK_TOKEN_OK = "copilot-unit-test-om-bot-credential-not-a-jwt-0123456789ab"
+
 
 class TestSC1LoopbackBindOnly:
     """SC-1: FastAPI binds to 127.0.0.1 only in v1; 0.0.0.0 must NOT be the default."""
@@ -90,7 +94,7 @@ class TestRuntimeEnvValidation:
         s = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ai_sdk_host="http://localhost:8585",
-            ai_sdk_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
+            ai_sdk_token=_UNIT_TEST_OM_SDK_TOKEN_OK,
             openai_api_key="sk-paste-your-key-here",
         )
         with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
@@ -118,7 +122,7 @@ class TestRuntimeEnvValidation:
         s = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ai_sdk_host="http://localhost:8585",
-            ai_sdk_token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIn0.signature",
+            ai_sdk_token=_UNIT_TEST_OM_SDK_TOKEN_OK,
             openai_api_key="sk-abcdefghijklmnopqrstuvwxyz0123456789",
             github_token="ghp_your_fine_grained_pat_here",
         )
@@ -130,10 +134,11 @@ class TestRuntimeEnvValidation:
         """Windows editors sometimes save UTF-8 BOM; users sometimes wrap values in quotes."""
         monkeypatch.delenv("PYTEST_VERSION", raising=False)
         monkeypatch.delenv("COPILOT_SKIP_ENV_VALIDATION", raising=False)
+        wrapped = f"'{_UNIT_TEST_OM_SDK_TOKEN_OK}'"
         s = Settings(
             _env_file=None,  # type: ignore[call-arg]
             ai_sdk_host="http://localhost:8585",
-            ai_sdk_token='"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIn0.signature"',
+            ai_sdk_token=wrapped,
             openai_api_key="\ufeffsk-abcdefghijklmnopqrstuvwxyz0123456789",
         )
         assert_runtime_env_ready(s)
