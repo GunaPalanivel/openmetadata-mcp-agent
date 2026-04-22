@@ -32,6 +32,7 @@ from pydantic import BaseModel, Field
 
 from copilot.middleware.error_envelope import _envelope
 from copilot.models.chat import ErrorCode
+from copilot.services.agent import run_chat_turn
 
 router = APIRouter(tags=["chat"])
 
@@ -58,13 +59,13 @@ class ChatCancelRequest(BaseModel):
 
 
 @router.post("/chat", summary="Submit a chat message")
-async def post_chat(request: Request, _body: ChatRequest) -> JSONResponse:
-    """TODO P1-04: wire to services.agent.run_chat_turn().
-
-    For now, returns a structured 'not_implemented' envelope so clients
-    integrate the error-envelope path before the happy path lands.
-    """
-    return _envelope(ErrorCode.NOT_IMPLEMENTED, request)
+async def post_chat(request: Request, body: ChatRequest) -> JSONResponse:
+    """Execute a chat turn through the agent pipeline."""
+    result = await run_chat_turn(
+        user_message=body.message,
+        session_id=str(body.session_id) if body.session_id else None,
+    )
+    return JSONResponse(status_code=200, content=result)
 
 
 @router.post("/chat/confirm", summary="Confirm a pending write proposal")

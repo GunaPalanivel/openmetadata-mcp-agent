@@ -60,14 +60,3 @@ class TestMetricsEndpoint:
         response = client.get("/api/v1/metrics")
         assert response.status_code == 200
         assert "text/plain" in response.headers["content-type"]
-
-
-class TestChatStub:
-    def test_chat_returns_not_implemented_envelope(self, client: TestClient) -> None:
-        response = client.post("/api/v1/chat", json={"message": "hello"})
-        assert response.status_code == 501
-        body = response.json()
-        assert body["code"] == "not_implemented"
-        assert "request_id" in body
-        assert "ts" in body
-        assert "secret" not in body["message"].lower()  # SC-8: no secrets in errors
