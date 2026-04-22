@@ -7,6 +7,9 @@ graph TB
     subgraph agentRepo [openmetadata-mcp-agent NEW repo]
         UI["Chat UI<br/>React + Vite"]
         API["FastAPI Backend<br/>POST /chat, /chat/confirm, /healthz, /metrics"]
+        Sessions["SessionStore<br/>pending proposals by session_id"]
+        GovStore["GovernanceStore<br/>FSM per entity FQN"]
+        DriftW["DriftWorker<br/>lifespan background poll"]
         Agent["Agent Orchestrator<br/>LangGraph + GPT-4o-mini"]
         Validator["LLM Output Validator<br/>Pydantic schema check"]
         Confirm["HITL Confirmation Gate"]
@@ -31,7 +34,12 @@ graph TB
 
     User((Data Steward)) --> UI
     UI -->|"REST, localhost only"| API
+    API --> Sessions
     API --> Agent
+    Agent --> GovStore
+    DriftW --> GovStore
+    DriftW --> MCPClient
+    GovStore -.->|"write-back on APPROVED or DRIFT"| MCPClient
     Agent --> GovEngine
     GovEngine --> Agent
     Agent -->|"escaped + truncated prompt"| OpenAI

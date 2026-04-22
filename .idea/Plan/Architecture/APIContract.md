@@ -237,6 +237,45 @@ Prometheus text-format metrics endpoint. Always 200 (text/plain).
 
 ---
 
+## Planned endpoints (pre-implementation contract)
+
+These routes are **specified before code** so agents and reviewers do not silently diverge from intent. Implement behind the same `/api/v1` prefix and error envelope as existing routes.
+
+### `GET /api/v1/governance/drift`
+
+**Purpose**: List entities whose governance FSM is in **`drift_detected`** (and optional remediation hints), populated by the drift worker described in [FeatureDev/GovernanceEngine.md](../FeatureDev/GovernanceEngine.md).
+
+**Auth (v1)**: Same as other `/api/v1/*` routes — none; loopback-only deployment per Threat Model.
+
+**Response 200**:
+
+```json
+{
+  "request_id": "uuid-v4",
+  "ts": "2026-04-26T14:30:00.000+05:30",
+  "entities": [
+    {
+      "fqn": "service.database.schema.table_name",
+      "governance_state": "drift_detected",
+      "signals": ["lineage_changed", "tags_removed:PII.Sensitive"],
+      "detected_at": "2026-04-26T14:25:00.000+05:30"
+    }
+  ],
+  "count": 1
+}
+```
+
+| Field      | Type     | Notes                                                                                        |
+| ---------- | -------- | -------------------------------------------------------------------------------------------- |
+| `entities` | array    | Empty array when no drift; stable sort by `fqn`.                                             |
+| `signals`  | string[] | Machine-readable tokens; optional human summary may be added later without breaking clients. |
+
+**Response 503 — om_unavailable**: drift job could not refresh OM view (circuit breaker / timeout).
+
+**Response 500 — internal_error**: aggregation failed after partial reads (log + alert).
+
+---
+
 ## Conventions
 
 - **Content-Type**: `application/json` for all JSON requests/responses.
