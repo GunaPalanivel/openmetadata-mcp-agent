@@ -178,9 +178,7 @@ jobs:
           node-version: '20'
       - name: Install + build + typecheck
         working-directory: ui
-        # No package-lock.json yet (Phase 1 scaffold); use `npm install`.
-        # Replace with `npm ci` once we commit a lockfile.
         run: |
-          npm install --no-audit --no-fund
+          npm ci
           npm run build
           npx tsc --noEmit
