@@ -93,8 +93,9 @@ pre-commit run --all-files   # initial bulk run
 make demo
 # Backend: http://127.0.0.1:8000  (FastAPI docs at /api/v1/docs)
 # UI:      http://localhost:3000
-# (Manual UI verification checklist: [ui/README.md](../ui/README.md).)
 ```
+
+UI-only checks (port `:3000`, console clean): [`ui/README.md`](../ui/README.md). `make install_dev_env` runs `npm ci` under `ui/` using the committed lockfile.
 
 ## Step 6: Verify
 
