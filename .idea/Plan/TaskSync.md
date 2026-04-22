@@ -1,11 +1,11 @@
 # TaskSync — Master Task Tracker
 
-> **Last updated**: April 22, 2026 — aligned with repo + [Progress.md](./Progress.md) **Codebase snapshot — 2026-04-22** > **LLM Provider**: ✅ OpenAI GPT-4o-mini (free Codex credits)
+> **Last updated**: April 23, 2026 — aligned with repo + [Progress.md](./Progress.md) **Codebase snapshot — 2026-04-23** > **LLM Provider**: ✅ OpenAI GPT-4o-mini (free Codex credits)
 > **Repo Strategy**: ✅ NEW standalone repo (`openmetadata-mcp-agent`) + fork for GFI only
 > **Plan/ location**: ✅ `.idea/Plan/` stays local (agent command center)
 > **All tasks ordered by priority. Check off as you complete them.**
 
-**Quick pointers (code today):** Run the agent with `uvicorn copilot.api.main:app` (not root `main.py`). MCP: `src/copilot/clients/om_mcp.py` + env **`OM_MCP_HTTP_PATH`** (default `/mcp`). Seed: `scripts/load_seed.py` + `python-dotenv` + `dataLength` for OM 1.6; search index: `scripts/trigger_om_search_reindex.py`; `make demo-fresh` chains reindex after load.
+**Quick pointers (code today):** Run the agent with `uvicorn copilot.api.main:app` (not root `main.py`). MCP: `src/copilot/clients/om_mcp.py` + env **`OM_MCP_HTTP_PATH`** (default `/mcp`). Seed: `scripts/load_seed.py` + `python-dotenv` + `dataLength` for OM 1.6; search index: `scripts/trigger_om_search_reindex.py`; `make demo-fresh` chains reindex after load. UI: [`ui/README.md`](../../ui/README.md) — **`npm ci`** / **`npm run dev`** on **`http://localhost:3000`** (Vite `127.0.0.1:3000`); committed **`ui/package-lock.json`**, **`ui/public/favicon.svg`**, CI **`ui-build`** uses **`npm ci`**; P1-14 / [#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27) — PR [\#73](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/73) (merge when green).
 
 ---
 
@@ -93,7 +93,7 @@ We'll link the final submission + demo video before the Apr 26 deadline.
 - [x] `P1-11` Docker: local OM at `:8585` via [`infrastructure/docker-compose.om.yml`](../../infrastructure/docker-compose.om.yml) (server **1.6.2**; not legacy `docker/development/` path)
 - [x] `P1-12` Bot JWT: [`scripts/generate_bot_jwt.py`](../../scripts/generate_bot_jwt.py) + `.env` / `make om-gen-token`
 - [x] `P1-13` Pre-seed OM: [`seed/customer_db.json`](../../seed/customer_db.json) + [`scripts/load_seed.py`](../../scripts/load_seed.py) (dotenv + `dataLength` for OM 1.6); optional [`scripts/trigger_om_search_reindex.py`](../../scripts/trigger_om_search_reindex.py)
-- [x] `P1-14` Scaffold React chat UI (`ui/` + Vite)
+- [x] `P1-14` Confirm React chat UI on `:3000` ([\#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27)): Vite scaffold + [`ui/README.md`](../../ui/README.md) verification checklist + `ui/package-lock.json` + `ui/public/favicon.svg` + `@types/react-dom` aligned to React 18; PR [\#73](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/73)
 - [x] `P1-15` Document setup: `README.md`, [`docs/getting-started.md`](../../docs/getting-started.md)
 
 ### OMH-BSE (@5009226-bhawikakumari) — Delivery
@@ -107,7 +107,7 @@ We'll link the final submission + demo video before the Apr 26 deadline.
 ### Phase 1 Exit Gate
 
 - [/] MCP client **implemented**; live search results require working OM MCP route (**`OM_MCP_HTTP_PATH`**), token, and ES index (see Progress snapshot)
-- [x] Chat UI scaffold in repo (`ui/`)
+- [x] Chat UI scaffold in repo (`ui/`) with lockfile-driven **`npm ci`** and P1-14 runbook in [`ui/README.md`](../../ui/README.md) (see [\#73](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/73))
 - [x] README + CLAUDE.md present in new repo
 - [/] [Validation/QualityGates.md](./Validation/QualityGates.md) Gate 0 + Gate 1 — verify in CI / locally before demo
 - [x] Intent comments posted on #26645 + #26608
