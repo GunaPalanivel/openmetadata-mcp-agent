@@ -4,6 +4,10 @@ All notable changes to this project are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+
+- **P1-12 / [#25](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/25)** — `scripts/generate_bot_jwt.py` and `make om-gen-token` target to automate Bot JWT generation from a running OM instance. Connects to OM REST API, authenticates as admin, looks up `ingestion-bot`, and generates a configurable-expiry JWT printed to stdout for `.env` pasting. Docs updated in `docs/getting-started.md` (Step 3).
+
 ### Verified
 
 - **P1-01 / [#14](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/14)** — Phase 1 runtime dependencies install clean on Python 3.11.15: `data-ai-sdk[langchain]==0.1.2`, `langgraph==0.2.76`, `langchain-openai==0.2.14`, `fastapi==0.119.1`, `uvicorn[standard]==0.39.0`. All five imports resolve via `pip install -e ".[dev]"`. Feature-Dev spec: [`.idea/Plan/FeatureDev/Phase1Dependencies.md`](.idea/Plan/FeatureDev/Phase1Dependencies.md). Unblocks [#16](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/16).

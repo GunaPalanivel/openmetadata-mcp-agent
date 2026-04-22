@@ -8,7 +8,7 @@
 
 .DEFAULT_GOAL := help
 .PHONY: help install install_dev_env install_ui install-hooks \
-        om-start om-stop om-health om-logs \
+        om-start om-stop om-health om-logs om-gen-token \
         demo demo-cached demo-fresh \
         restart-agent test test-unit test-integration test-security test-arch \
         lint py_format static-checks license-header-check pre-commit-all ci-local clean
@@ -30,6 +30,7 @@ help:
 	@echo "    make om-stop             Stop and remove OpenMetadata containers"
 	@echo "    make om-health           Check if OpenMetadata health endpoint is responding"
 	@echo "    make om-logs             Tail OpenMetadata server logs"
+	@echo "    make om-gen-token        Generate Bot JWT for AI_SDK_TOKEN (.env)"
 	@echo ""
 	@echo "  Run:"
 	@echo "    make demo                 Start agent backend + UI for live demo"
@@ -88,6 +89,9 @@ om-health:
 
 om-logs:
 	docker compose -f infrastructure/docker-compose.om.yml logs -f openmetadata-server
+
+om-gen-token:
+	@python scripts/generate_bot_jwt.py
 
 # -----------------------------------------------------------------------------
 # Run
