@@ -73,11 +73,11 @@ def check_chat(url: str) -> bool:
         return False
 
     audit_log = data.get("audit_log", [])
-    if not any(entry.get("tool_name") == "search_metadata" for entry in audit_log):
-        print(f"FAIL: {url} audit_log missing 'search_metadata': {audit_log}", file=sys.stderr)
+    if not any(entry.get("success") is True for entry in audit_log):
+        print(f"FAIL: {url} audit_log missing a successful entry: {audit_log}", file=sys.stderr)
         return False
 
-    print(f"OK: {url}  (agent responded and called search_metadata)")
+    print(f"OK: {url}  (agent responded and recorded a successful tool call)")
     print("--- Agent Response ---")
     print(data["response"])
     print("----------------------")
