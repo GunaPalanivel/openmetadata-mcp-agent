@@ -101,6 +101,7 @@ In a new terminal:
 
 ```bash
 python scripts/smoke_test.py --include-om
+# After /api/v1/chat is fully implemented, add --include-chat to require a real agent reply.
 ```
 
 Should print `smoke: all green`. If it doesn't, check `[Troubleshooting](#troubleshooting)` below.

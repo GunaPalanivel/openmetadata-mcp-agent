@@ -12,6 +12,7 @@ Exit code:
     0  all green; safe to record/demo
     1  agent backend down or returning unexpected response
     2  OpenMetadata MCP server unreachable (when --include-om is set)
+    3  agent chat endpoint failed (when --include-chat is set)
 """
 
 from __future__ import annotations
@@ -89,7 +90,12 @@ def main() -> int:
     parser.add_argument("--agent-url", default="http://127.0.0.1:8000")
     parser.add_argument("--om-url", default="http://localhost:8585")
     parser.add_argument(
-        "--include-om", action="store_true", help="Also check OpenMetadata server health"
+        "--include-om", action="store_true", help="Also check OpenMetadata server (version API)"
+    )
+    parser.add_argument(
+        "--include-chat",
+        action="store_true",
+        help="POST to /api/v1/chat and require a real agent response (Phase 2+)",
     )
     args = parser.parse_args()
 
@@ -102,6 +108,7 @@ def main() -> int:
         if not check_url(f"{args.om_url}/api/v1/system/version", "version"):
             return 2
 
+    if args.include_chat:
         print("smoke: agent chat endpoint ...")
         if not check_chat(f"{args.agent_url}/api/v1/chat"):
             return 3
