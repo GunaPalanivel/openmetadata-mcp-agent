@@ -33,7 +33,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from copilot import __version__
 from copilot.api import chat as chat_routes
-from copilot.config import get_settings
+from copilot.config import assert_runtime_env_ready, get_settings
 from copilot.middleware import (
     RequestIdMiddleware,
     build_limiter,
@@ -50,6 +50,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     configure_observability()
     log = get_logger(__name__)
     settings = get_settings()
+    assert_runtime_env_ready(settings)
     log.info(
         "app.startup",
         version=__version__,

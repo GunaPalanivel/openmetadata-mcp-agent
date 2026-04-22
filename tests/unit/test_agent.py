@@ -379,3 +379,32 @@ class TestRunChatTurn:
         mock_graph.ainvoke.assert_awaited_once()
         initial_state = mock_graph.ainvoke.await_args.args[0]
         assert initial_state["request_id"] == str(request_id)
+
+    @patch("copilot.services.agent._get_compiled_graph")
+    async def test_audit_log_includes_error_code(self, mock_get_graph: Any) -> None:
+        """Failed tool calls surface error_code in the API audit_log."""
+        request_id = uuid4()
+        session_id = uuid4()
+        mock_graph = AsyncMock()
+        mock_graph.ainvoke.return_value = {
+            "request_id": str(request_id),
+            "session_id": str(session_id),
+            "final_response": "Could not search.",
+            "tool_records": [
+                {
+                    "tool_name": "search_metadata",
+                    "duration_ms": 12,
+                    "success": False,
+                    "error_code": "om_unavailable",
+                }
+            ],
+            "tokens_prompt": 0,
+            "tokens_completion": 0,
+        }
+        mock_get_graph.return_value = mock_graph
+
+        result = await run_chat_turn("show me tables", request_id=request_id)
+
+        assert len(result["audit_log"]) == 1
+        assert result["audit_log"][0]["error_code"] == "om_unavailable"
+        assert result["audit_log"][0]["success"] is False

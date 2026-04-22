@@ -53,3 +53,25 @@ class TestCheckChat:
 
         with patch("smoke_test.urllib.request.urlopen", return_value=_urlopen_context(payload)):
             assert smoke_test.check_chat("http://127.0.0.1:8000/api/v1/chat") is False
+
+    def test_rejects_prints_diagnostic_hint(self, capsys):
+        import smoke_test
+
+        payload = {
+            "request_id": "req-3",
+            "response": "Some reply.",
+            "audit_log": [
+                {
+                    "tool_name": "search_metadata",
+                    "success": False,
+                    "error_code": "om_unavailable",
+                }
+            ],
+        }
+
+        with patch("smoke_test.urllib.request.urlopen", return_value=_urlopen_context(payload)):
+            assert smoke_test.check_chat("http://127.0.0.1:8000/api/v1/chat") is False
+
+        err = capsys.readouterr().err
+        assert "HINT:" in err
+        assert "trigger_om_search_reindex" in err
