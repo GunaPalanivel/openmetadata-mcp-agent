@@ -35,7 +35,7 @@ from functools import lru_cache
 from typing import Any
 
 import pybreaker
-from ai_sdk.mcp._client import MCPError  # type: ignore[import-untyped]
+from ai_sdk.mcp._client import MCPError  # type: ignore[attr-defined, unused-ignore]
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -106,7 +106,7 @@ def _get_sdk_client() -> Any:
         raise McpUnavailable("AI_SDK_TOKEN is not set — cannot connect to OM MCP server")
 
     try:
-        from ai_sdk import AISdk  # type: ignore[import-untyped]
+        from ai_sdk import AISdk  # type: ignore[unused-ignore]
     except ImportError as exc:  # pragma: no cover
         raise McpUnavailable("data-ai-sdk is not installed") from exc
 
@@ -165,7 +165,9 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     elapsed_ms = int((time.monotonic() - start) * 1000)
     log.info("om.call_tool.complete", tool=name, elapsed_ms=elapsed_ms)
     agent_mcp_calls_total.labels(tool_name=name, outcome="ok").inc()
-    return result
+    from typing import cast
+
+    return cast(dict[str, Any], result)
 
 
 @om_breaker
@@ -176,11 +178,11 @@ def _call_tool_inner(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         McpUnavailable: On SDK connection / execution errors.
         McpAuthFailed: On authentication errors (401/403 in error message).
     """
-    from ai_sdk.mcp._client import (  # type: ignore[import-untyped]
+    from ai_sdk.mcp._client import (  # type: ignore[attr-defined, unused-ignore]
         MCPError,
         MCPToolExecutionError,
     )
-    from ai_sdk.mcp.models import MCPTool  # type: ignore[import-untyped]
+    from ai_sdk.mcp.models import MCPTool  # type: ignore[unused-ignore]
 
     sdk = _get_sdk_client()
 
@@ -202,7 +204,7 @@ def _call_tool_inner(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
                 "tools/call",
                 {"name": name, "arguments": arguments},
             )
-            from ai_sdk.mcp.models import ToolCallResult  # type: ignore[import-untyped]
+            from ai_sdk.mcp.models import ToolCallResult  # type: ignore[unused-ignore]
 
             is_error = result_raw.get("isError", False)
             content = result_raw.get("content", [])
@@ -323,7 +325,7 @@ def search_metadata_typed(params: SearchMetadataParams) -> SearchMetadataRespons
     total = raw.get("total", raw.get("totalCount", len(hits_raw)))
 
     return SearchMetadataResponse.model_validate(
-        {"hits": hits_raw, "total": total, **raw},
+        {**raw, "hits": hits_raw, "total": total},
     )
 
 
