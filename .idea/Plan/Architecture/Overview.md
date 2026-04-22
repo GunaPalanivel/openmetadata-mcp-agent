@@ -162,3 +162,86 @@ Detail in [APIContract.md §GET /api/v1/metrics](./APIContract.md). Series list 
 6. **Observability is architecture**: structlog + `/metrics` + request_id are non-negotiable, present in every layer (per Feature-Dev Architect's Judgment Rule 6).
 7. **Defense-in-depth at the LLM boundary**: input neutralization + Pydantic output validation + tool allowlist + HITL gate (Module G of [security-vulnerability-auditor SKILL](../../agents/security-vulnerability-auditor/SKILL.md)).
 8. **Three Laws of Implementation enforced everywhere**: layer separation; handle every error path; every external call has timeout + retry + circuit breaker. See [CodingStandards.md](./CodingStandards.md).
+
+---
+
+## Governance Engine (Phase 2 — April 22–23)
+
+> Full spec: [FeatureDev/GovernanceEngine.md](../FeatureDev/GovernanceEngine.md)
+> Issues: [#60](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/60)–[#66](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/66)
+
+### Governance Lifecycle State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> unknown
+    unknown --> scanned : agent inspects entity
+    scanned --> suggested : LLM proposes tags
+    scanned --> unknown : reset
+    suggested --> approved : human confirms (HITL)
+    suggested --> scanned : human rejects
+    approved --> enforced : drift scan confirms tags present
+    approved --> drift_detected : lineage or tags changed
+    enforced --> drift_detected : lineage or tags changed
+    drift_detected --> remediated : drift resolved
+    drift_detected --> suggested : re-classify
+    remediated --> enforced : drift scan confirms
+```
+
+### New Services
+
+| Service | File | Purpose |
+|---------|------|---------|
+| **Governance Store** | `services/governance_store.py` | In-memory `Dict[str, EntityGovernanceRecord]`; FSM transition validation |
+| **Session Manager** | `services/sessions.py` | Stores pending `ToolCallProposal`; wires `POST /chat/confirm` and `/chat/cancel` |
+| **Drift Detector** | `services/drift.py` | SHA-256 lineage hashing; tag presence verification; background scan every 10 min |
+| **Similarity Scorer** | `services/similarity.py` | Scores candidates against approved entities; 3-signal weighted scoring |
+| **Causal Impact** | `services/impact.py` | Downstream asset counting; Tier-1 identification; consequence narrative |
+
+### New Models
+
+| Model | File | Purpose |
+|-------|------|---------|
+| `GovernanceState` | `models/governance_state.py` | 7-state StrEnum |
+| `EntityGovernanceRecord` | `models/governance_state.py` | Per-entity governance tracking (FQN, state, rationale, lineage hash, approved tags) |
+| `DriftReport` | `models/governance_state.py` | Drift signals + severity |
+| `SimilaritySignal` | `services/similarity.py` | Source FQN, score, matched tags |
+| `CausalImpact` | `services/impact.py` | Downstream counts, Tier-1 counts, consequence |
+
+### New API Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/v1/governance/status` | Returns all governance records |
+| `GET` | `/api/v1/governance/drift` | Triggers drift scan, returns reports |
+
+### Agent State Extensions
+
+- `evidence_gap: bool` — set when classify intent has no tool proposals (epistemic humility)
+- `drift_check` added to `VALID_INTENTS`
+
+### Updated Data Flow (with governance)
+
+```
+User: "auto-classify PII in customer_db"
+  → classify_intent → "classify"
+  → select_tools → [search_metadata, get_entity_details, patch_entity]
+  → validate_proposal → [read proposals validated, write proposals held]
+  → hitl_gate
+      → read tools (search, details) → execute_tool
+          → governance_store: transition UNKNOWN → SCANNED
+      → write tool (patch_entity) → sessions.store_proposal()
+          → return pending_confirmation to user
+  → format_response
+      → inject similarity score from approved entities
+      → inject causal impact (downstream assets, Tier-1)
+      → if evidence_gap: suggest glossary term creation
+  → user sees: "12 PII candidates. Matches 4/5 signals from orders.customers (0.87). 14 downstream assets at risk."
+  → POST /chat/confirm (accepted=true)
+      → sessions.confirm_proposal()
+      → om_mcp.call_tool("patch_entity", ...)
+      → governance_store: transition SUGGESTED → APPROVED
+  → background drift scan (every 10 min)
+      → check lineage hash + tag presence
+      → if changed: transition APPROVED → DRIFT_DETECTED
+```

@@ -180,8 +180,92 @@ Standard `code` values (extend with care):
 | ----------------------------------- | ---------------------------------------------------------------------------- | ------------------------------ |
 | LangGraph in-memory checkpointer    | `ChatSession`, `ToolCallProposal` (pending), `ClassificationJob` (in-flight) | Until process restart          |
 | In-memory cache (per process, dict) | OM tool list (`client.mcp.list_tools()` result, refreshed every 60s)         | Until process restart          |
+| **Governance Store (dict)**         | `EntityGovernanceRecord` keyed by FQN; FSM state + lineage hash + tags       | Until process restart          |
+| **Session Manager (dict)**          | Pending `ToolCallProposal`s keyed by session_id                              | Until process restart or 5 min |
 | `logs/agent.log`                    | `ToolCallRecord` entries serialized as JSON lines                            | 5 rotating files of 10 MB each |
-| `seed/customer_db.json`             | The 50+ table fixture for the demo                                           | Repo-pinned                    |
+| `seed/customer_db.json`             | The 52 table fixture for the demo                                            | Repo-pinned                    |
+
+---
+
+## Governance Engine Models (Phase 2 — NEW)
+
+> Full spec: [FeatureDev/GovernanceEngine.md](../FeatureDev/GovernanceEngine.md)
+> Issues: [#60](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/60)–[#66](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/66)
+
+### `GovernanceState`
+
+7-state lifecycle enum for entity governance.
+
+```python
+from enum import StrEnum
+
+class GovernanceState(StrEnum):
+    UNKNOWN = "unknown"
+    SCANNED = "scanned"
+    SUGGESTED = "suggested"
+    APPROVED = "approved"
+    ENFORCED = "enforced"
+    DRIFT_DETECTED = "drift_detected"
+    REMEDIATED = "remediated"
+```
+
+### `EntityGovernanceRecord`
+
+Per-entity governance tracking. Stored in the in-memory governance store.
+
+```python
+class EntityGovernanceRecord(BaseModel):
+    entity_fqn: str                                    # Fully qualified name
+    entity_type: str                                   # table, dashboard, etc.
+    state: GovernanceState = GovernanceState.UNKNOWN
+    classification_rationale: str | None = None        # LLM's reasoning (capped 500 chars)
+    lineage_snapshot_hash: str | None = None           # SHA-256 of sorted upstream FQNs
+    approved_tags: list[str] = []                      # e.g. ["PII.Sensitive", "Tier.Tier1"]
+    approval_timestamp: datetime | None = None
+    drift_signals: list[str] = []                      # what changed (e.g. "lineage_changed", "tag_removed")
+    similarity_score: float | None = None              # 0.0-1.0 from similarity scorer
+    last_updated: datetime
+```
+
+### `DriftReport`
+
+Output of drift detection scan.
+
+```python
+class DriftReport(BaseModel):
+    entity_fqn: str
+    signals: list[str]                                 # ["lineage_hash_changed", "tag_PII.Sensitive_removed"]
+    severity: Literal["low", "medium", "high"]
+    previous_state: GovernanceState
+    new_state: GovernanceState = GovernanceState.DRIFT_DETECTED
+    detected_at: datetime
+```
+
+### Transition Rules (FSM)
+
+```python
+ALLOWED_TRANSITIONS: dict[GovernanceState, frozenset[GovernanceState]] = {
+    GovernanceState.UNKNOWN:        frozenset({GovernanceState.SCANNED}),
+    GovernanceState.SCANNED:        frozenset({GovernanceState.SUGGESTED, GovernanceState.UNKNOWN}),
+    GovernanceState.SUGGESTED:      frozenset({GovernanceState.APPROVED, GovernanceState.SCANNED}),
+    GovernanceState.APPROVED:       frozenset({GovernanceState.ENFORCED, GovernanceState.DRIFT_DETECTED}),
+    GovernanceState.ENFORCED:       frozenset({GovernanceState.DRIFT_DETECTED}),
+    GovernanceState.DRIFT_DETECTED: frozenset({GovernanceState.REMEDIATED, GovernanceState.SUGGESTED}),
+    GovernanceState.REMEDIATED:     frozenset({GovernanceState.ENFORCED}),
+}
+```
+
+Invalid transitions raise `InvalidGovernanceTransition` (HTTP 422).
+
+### New Error Codes
+
+| Code                          | Meaning                                           | HTTP status |
+| ----------------------------- | ------------------------------------------------- | ----------- |
+| `invalid_governance_transition` | FSM rejected the requested state change           | 422         |
+| `proposal_not_found`          | No pending proposal for this session_id           | 422         |
+| `confirmation_expired`        | User took > 5 min to confirm                      | 410         |
+
+---
 
 ## What we explicitly do NOT model in v1
 
@@ -190,5 +274,6 @@ Standard `code` values (extend with care):
 - Persistent classification policies (every job is one-shot)
 - Cost accounting per session beyond the in-memory token counter
 - A real RBAC layer (the agent inherits the Bot user's OM permissions; that's the entire authz story)
+- **Persistent governance state** (in-memory only in v1; v2 will use OM `patch_entity` custom properties)
 
 These are documented as out-of-scope so reviewers don't add them silently.

@@ -237,6 +237,59 @@ Prometheus text-format metrics endpoint. Always 200 (text/plain).
 
 ---
 
+### `GET /api/v1/governance/status` (Phase 2 — GOV-03)
+
+Returns all governance records from the in-memory store. Useful for the governance dashboard and debugging.
+
+**Response 200**:
+
+```json
+{
+  "records": [
+    {
+      "entity_fqn": "customer_db.public.users",
+      "entity_type": "table",
+      "state": "approved",
+      "approved_tags": ["PII.Sensitive"],
+      "similarity_score": 0.87,
+      "lineage_snapshot_hash": "a1b2c3...",
+      "approval_timestamp": "2026-04-22T15:30:00.000+05:30",
+      "last_updated": "2026-04-22T15:30:00.000+05:30"
+    }
+  ],
+  "total": 1,
+  "ts": "..."
+}
+```
+
+---
+
+### `GET /api/v1/governance/drift` (Phase 2 — GOV-03)
+
+Triggers a drift scan on all `APPROVED` entities and returns any detected drift. The background task also runs this every 10 minutes.
+
+**Response 200**:
+
+```json
+{
+  "drift_reports": [
+    {
+      "entity_fqn": "customer_db.public.users",
+      "signals": ["tag_PII.Sensitive_removed", "lineage_hash_changed"],
+      "severity": "high",
+      "previous_state": "approved",
+      "new_state": "drift_detected",
+      "detected_at": "2026-04-22T16:00:00.000+05:30"
+    }
+  ],
+  "entities_scanned": 5,
+  "drift_found": 1,
+  "ts": "..."
+}
+```
+
+---
+
 ## Conventions
 
 - **Content-Type**: `application/json` for all JSON requests/responses.

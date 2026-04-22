@@ -8,8 +8,8 @@
 | **Project**         | OpenMetadata MCP Agent                                                                       |
 | **Deadline**        | April 26, 2026                                                                               |
 | **Hackathon Start** | April 17, 2026                                                                               |
-| **Today**           | Day 3 (April 19) — **7 days remaining**                                                      |
-| **Project Repo**    | `GunaPalanivel/openmetadata-mcp-agent` _(NEW — to be created)_                               |
+| **Today**           | Day 6 (April 22) — **4 days remaining**                                                      |
+| **Project Repo**    | [GunaPalanivel/openmetadata-mcp-agent](https://github.com/GunaPalanivel/openmetadata-mcp-agent) ✅ Live |
 | **Fork Repo**       | [GunaPalanivel/OpenMetadata](https://github.com/GunaPalanivel/OpenMetadata) _(GFI PRs only)_ |
 | **Board**           | [GitHub Project Board](https://github.com/orgs/open-metadata/projects/107/views/1)           |
 | **Rules**           | [WeMakeDevs Hackathon Page](https://www.wemakedevs.org/hackathons/openmetadata)              |
@@ -56,11 +56,12 @@ This project advances both. See [Project/VisionAlignment.md](./Project/VisionAli
 .idea/Plan/ (LOCAL — agent command center, gitignored)
 ├── README.md                      ← THIS FILE
 ├── TaskSync.md                    ← Master task list (ordered, per-person)
+├── Progress.md                    ← Per-person lifecycle tracker with GitHub issues
 ├── Project/                       ← PRD, ADRs, Discovery, NFRs, Vision, Judges, Risks, Runbook, TechStack
 ├── Architecture/                  ← System design, Data Model, API Contract, CLAUDE template, Coding Standards
 ├── Security/                      ← Threat Model, Prompt Injection, Control Coverage, Secrets, CI Hardening
 ├── DataFindings/                  ← MCP audit, board status, API analysis, GFI
-├── FeatureDev/                    ← Per-feature specs
+├── FeatureDev/                    ← Per-feature specs (AutoClassification, LineageImpact, GovernanceEngine)
 ├── Validation/                    ← Setup guide, Test Strategy, Quality Gates, PRR
 ├── PR-Review/                     ← PR workflow, review log
 ├── Demo/                          ← Narrative, Submission Checklist, Competitive Matrix, Failure Recovery
@@ -108,11 +109,17 @@ PLAN → BUILD → VALIDATE → FIX → VALIDATE → PR DRAFT → REVIEWER → M
 
 ### Architecture
 
-- [Architecture/Overview.md](./Architecture/Overview.md) — System context + Trust Boundary diagram + Observability subsystem
-- [Architecture/DataModel.md](./Architecture/DataModel.md) — Pydantic shapes (ChatSession, ToolCallProposal, ClassificationJob, error envelope)
-- [Architecture/APIContract.md](./Architecture/APIContract.md) — Full FastAPI contract (`/chat`, `/chat/confirm`, `/healthz`, `/metrics`)
+- [Architecture/Overview.md](./Architecture/Overview.md) — System context + Trust Boundary diagram + Governance Engine architecture + Observability
+- [Architecture/DataModel.md](./Architecture/DataModel.md) — Pydantic shapes (ChatSession, ToolCallProposal, GovernanceState, EntityGovernanceRecord, DriftReport)
+- [Architecture/APIContract.md](./Architecture/APIContract.md) — Full FastAPI contract (`/chat`, `/chat/confirm`, `/healthz`, `/metrics`, `/governance/status`, `/governance/drift`)
 - [Architecture/CLAUDETemplate.md](./Architecture/CLAUDETemplate.md) — `CLAUDE.md` to drop into the new repo root
 - [Architecture/CodingStandards.md](./Architecture/CodingStandards.md) — The Three Laws of Implementation in Python
+
+### Feature Development
+
+- [FeatureDev/AutoClassification.md](./FeatureDev/AutoClassification.md) — Auto-classify PII flow spec
+- [FeatureDev/GovernanceEngine.md](./FeatureDev/GovernanceEngine.md) — 🆕 Governance Engine spec (7 sub-phases, issues #60–#66)
+- [FeatureDev/LineageImpact.md](./FeatureDev/LineageImpact.md) — Lineage impact analysis spec
 
 ### Security
 
@@ -144,7 +151,7 @@ PLAN → BUILD → VALIDATE → FIX → VALIDATE → PR DRAFT → REVIEWER → M
 
 ---
 
-## ✅ Verified Against (April 19, 2026)
+## ✅ Verified Against (April 22, 2026)
 
 | Claim                                             | Source                                                                                                                                                            |
 | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
