@@ -42,10 +42,31 @@ If you already have OpenMetadata running somewhere else, skip this step and set 
 
 The agent authenticates to OpenMetadata's MCP server using a Bot JWT.
 
+### Option A: Automated (recommended)
+
+```bash
+# Generates a 30-day JWT and prints it for you to paste into .env
+# Tries admin/admin first, then admin@open-metadata.org/admin on basic-auth installs.
+make om-gen-token
+
+# Custom expiry (OM 1.6.2 supports 7/30/60/90 days or Unlimited)
+python scripts/generate_bot_jwt.py --expiry-days 60
+
+# Custom OM host
+python scripts/generate_bot_jwt.py --host http://remote-om:8585
+
+# Custom login identifier for installs with a different principal domain
+python scripts/generate_bot_jwt.py --username admin@example.com
+```
+
+### Option B: Manual (via OM UI)
+
 1. Open OpenMetadata UI: http://localhost:8585
 2. Login with default creds: `admin` / `admin`
 3. Go to **Settings -> Bots -> ingestion-bot**
 4. Click **Generate New Token**, set expiry to 30 days, copy the token
+
+> **Security**: Do NOT paste the token in any GitHub comment, issue, or PR.
 
 ## Step 4: Configure secrets
 
