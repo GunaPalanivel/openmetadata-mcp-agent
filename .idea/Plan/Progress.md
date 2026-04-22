@@ -41,24 +41,38 @@ Each row uses the same 8-step lifecycle. Check the boxes inline:
 
 ---
 
+## Codebase snapshot — 2026-04-22
+
+Authoritative paths are under the repo root (`openmetadata-mcp-agent/`); links below are relative to **this** `.idea/Plan/` folder.
+
+- **Production FastAPI app**: `uvicorn copilot.api.main:app` — [`../../src/copilot/api/main.py`](../../src/copilot/api/main.py) (`GET /api/v1/healthz`, `POST /api/v1/chat`, `GET /api/v1/metrics`). Root [`../../main.py`](../../main.py) is a **stub** (`GET /health` only); it is not the agent.
+- **OM MCP client**: [`../../src/copilot/clients/om_mcp.py`](../../src/copilot/clients/om_mcp.py) — `data-ai-sdk[langchain]==0.1.2`, `tenacity` + `pybreaker`, maps SDK errors to `McpUnavailable` / `McpAuthFailed`. **`OM_MCP_HTTP_PATH`** (see [`../../src/copilot/config/settings.py`](../../src/copilot/config/settings.py)) overrides the SDK’s hardcoded `POST /mcp` via a one-time patch of `MCPClient._make_jsonrpc_request` (default path remains `/mcp`).
+- **Agent / audit**: [`../../src/copilot/services/agent.py`](../../src/copilot/services/agent.py) — LangGraph pipeline; chat `audit_log` includes **`error_code`** on failed tool calls.
+- **Seed & search indexing**: [`../../seed/customer_db.json`](../../seed/customer_db.json) (50+ tables); [`../../scripts/load_seed.py`](../../scripts/load_seed.py) loads repo **`.env`** via **`python-dotenv`**, injects **`dataLength`** for OM 1.6 string/binary column types; [`../../scripts/trigger_om_search_reindex.py`](../../scripts/trigger_om_search_reindex.py) triggers **SearchIndexingApplication** (with fallback); [`../../Makefile`](../../Makefile) **`demo-fresh`** runs load + reindex hint; [`../../seed/README.md`](../../seed/README.md) documents search verify URLs (OM 1.6 query quirks).
+- **Smoke**: [`../../scripts/smoke_test.py`](../../scripts/smoke_test.py) — optional `--include-om`; on chat audit failure prints **HINT** (logs + reindex script).
+- **Local OM stack**: [`../../infrastructure/docker-compose.om.yml`](../../infrastructure/docker-compose.om.yml) — OpenMetadata **1.6.2** (`docker.getcollate.io/openmetadata/server:1.6.2`) + MySQL + Elasticsearch; agent compose is [`../../infrastructure/docker-compose.yml`](../../infrastructure/docker-compose.yml) (OM is a separate client dependency).
+- **Tests**: `pytest tests/unit` — includes MCP wrapper ([`../../tests/unit/test_om_mcp.py`](../../tests/unit/test_om_mcp.py)), seed loader ([`../../tests/unit/test_load_seed.py`](../../tests/unit/test_load_seed.py)), settings / runtime guard ([`../../tests/unit/test_settings.py`](../../tests/unit/test_settings.py)), smoke script ([`../../tests/unit/test_smoke_script.py`](../../tests/unit/test_smoke_script.py)).
+
+---
+
 ## Phase 0 — Claim and Setup (Day 3, April 19)
 
 **Order of execution:** P0-01 → P0-02 → P0-03 → P0-04 → P0-05 → P0-06 → P0-07 → P0-08 → P0-09 → P0-10 (P0-10 is per-person, every contributor must finish it before their first commit).
 
 ### @GunaPalanivel
 
-| Task ID | Description                                                         | Issue                                                                                                | PR    | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
-| ------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
-| P0-01   | Post intent comment on upstream #26645                              | [#26645 comment](https://github.com/open-metadata/OpenMetadata/issues/26645#issuecomment-4275961194) | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
-| P0-02   | Post intent comment on upstream #26608                              | [#26608 comment](https://github.com/open-metadata/OpenMetadata/issues/26608#issuecomment-4275961984) | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
-| P0-03   | Create repo `GunaPalanivel/openmetadata-mcp-agent`                  | done                                                                                                 | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
-| P0-04   | Redeem OpenAI API credits (deferred until P2-01)                    | n/a                                                                                                  | n/a   | [!] | [!] | [!] | [!] | [!] | [!]       | [!] | [!] |
-| P0-05   | Generate OpenAI API key, save in `.env` (deferred with P0-04)       | n/a                                                                                                  | n/a   | [!] | [!] | [!] | [!] | [!] | [!]       | [!] | [!] |
-| P0-06   | Add team as collaborators (3 invites)                               | done                                                                                                 | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
-| P0-07   | Drop `CLAUDE.md` template into repo root                            | done                                                                                                 | done  | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
-| P0-08   | Star `open-metadata/OpenMetadata` (all 4)                           | done                                                                                                 | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
-| P0-09   | Read Discovery + NFRs + CodingStandards + PromptInjection           | #\_\_                                                                                                | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
-| P0-10   | Install pre-commit hooks (`pre-commit install` + `run --all-files`) | n/a                                                                                                  | n/a   | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| Task ID | Description                                                         | Issue                                                                                                | PR   | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ---- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P0-01   | Post intent comment on upstream #26645                              | [#26645 comment](https://github.com/open-metadata/OpenMetadata/issues/26645#issuecomment-4275961194) | n/a  | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-02   | Post intent comment on upstream #26608                              | [#26608 comment](https://github.com/open-metadata/OpenMetadata/issues/26608#issuecomment-4275961984) | n/a  | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-03   | Create repo `GunaPalanivel/openmetadata-mcp-agent`                  | done                                                                                                 | n/a  | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-04   | Redeem OpenAI API credits (deferred until P2-01)                    | n/a                                                                                                  | n/a  | [!] | [!] | [!] | [!] | [!] | [!]       | [!] | [!] |
+| P0-05   | Generate OpenAI API key, save in `.env` (deferred with P0-04)       | n/a                                                                                                  | n/a  | [!] | [!] | [!] | [!] | [!] | [!]       | [!] | [!] |
+| P0-06   | Add team as collaborators (3 invites)                               | done                                                                                                 | n/a  | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-07   | Drop `CLAUDE.md` template into repo root                            | done                                                                                                 | done | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-08   | Star `open-metadata/OpenMetadata` (all 4)                           | done                                                                                                 | n/a  | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-09   | Read Discovery + NFRs + CodingStandards + PromptInjection           | #\_\_                                                                                                | n/a  | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P0-10   | Install pre-commit hooks (`pre-commit install` + `run --all-files`) | n/a                                                                                                  | n/a  | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
 
 ### Per-person setup (every contributor)
 
@@ -89,51 +103,51 @@ Each row uses the same 8-step lifecycle. Check the boxes inline:
 
 ### @GunaPalanivel
 
-| Task ID | Description                                                   | Issue                                                                       | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
-| ------- | ------------------------------------------------------------- | --------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
-| P1-01   | Init repo with `pyproject.toml` and Phase 1 deps              | [#14](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/14)    |     | [x] | [x] | [x] | [x] | [x] | [x]       | [ ] | [ ] |
-| P1-02   | Create project structure (`src/copilot/...`, `ui/`, `tests/`) | [#15](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/15)    |     | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
-| P1-03   | Implement MCP client `search_metadata` happy path             | [#16](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/16)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-04   | LangGraph agent skeleton (NL -> intent -> tool -> respond)    | [#17](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/17)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-05   | Verify smoke: search returns data                             | [#18](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/18)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-06   | Review all Phase 1 PRs                                        | [#19](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/19)    | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| Task ID | Description                                                   | Issue                                                                    | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ------------------------------------------------------------- | ------------------------------------------------------------------------ | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P1-01   | Init repo with `pyproject.toml` and Phase 1 deps              | [#14](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/14) |     | [x] | [x] | [x] | [x] | [x] | [x]       | [ ] | [ ] |
+| P1-02   | Create project structure (`src/copilot/...`, `ui/`, `tests/`) | [#15](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/15) |     | [x] | [x] | [x] | [x] | [x] | [x]       | [x] | [x] |
+| P1-03   | Implement MCP client `search_metadata` happy path             | [#16](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/16) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-04   | LangGraph agent skeleton (NL -> intent -> tool -> respond)    | [#17](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/17) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-05   | Verify smoke: search returns data                             | [#18](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/18) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-06   | Review all Phase 1 PRs                                        | [#19](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/19) | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### @PriyankaSen0902
 
-| Task ID | Description                                                     | Issue                                                                       | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
-| ------- | --------------------------------------------------------------- | --------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
-| P1-07   | Study `data-ai-sdk` + `langchain-openai`, document tool schemas | [#20](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/20)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-08   | Map all 12 MCP tools to governance use cases (update audit doc) | [#21](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/21)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-09   | Typed wrapper for top 6 tools (Pydantic params + responses)     | [#22](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/22)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-10   | 10+ unit tests for MCP client wrapper (mock responses)          | [#23](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/23)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| Task ID | Description                                                     | Issue                                                                    | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | --------------------------------------------------------------- | ------------------------------------------------------------------------ | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P1-07   | Study `data-ai-sdk` + `langchain-openai`, document tool schemas | [#20](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/20) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-08   | Map all 12 MCP tools to governance use cases (update audit doc) | [#21](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/21) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-09   | Typed wrapper for top 6 tools (Pydantic params + responses)     | [#22](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/22) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-10   | 10+ unit tests for MCP client wrapper (mock responses)          | [#23](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/23) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
 
 ### @aravindsai003
 
-| Task ID | Description                                           | Issue                                                                       | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
-| ------- | ----------------------------------------------------- | --------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
-| P1-11   | Local OM at `:8585` via `docker/development/`         | [#24](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/24)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-12   | Generate Bot JWT, share privately                     | [#25](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/25)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-13   | Pre-seed OM with 50+ realistic tables                 | [#26](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/26)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-14   | Confirm UI scaffold runs on `:3000`                   | [#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-15   | Document setup in `README.md` (clone to run in 5 min) | [#28](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/28)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| Task ID | Description                                                    | Issue                                                                    | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | -------------------------------------------------------------- | ------------------------------------------------------------------------ | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P1-11   | Local OM at `:8585` via `infrastructure/docker-compose.om.yml` | [#24](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/24) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-12   | Generate Bot JWT, share privately                              | [#25](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/25) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-13   | Pre-seed OM with 50+ realistic tables                          | [#26](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/26) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-14   | Confirm UI scaffold runs on `:3000`                            | [#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-15   | Document setup in `README.md` (clone to run in 5 min)          | [#28](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/28) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
 
 ### @5009226-bhawikakumari
 
-| Task ID | Description                                                | Issue                                                                       | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
-| ------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
-| P1-16   | Polish public README (1-liner, features, setup)            | [#29](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/29)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-17   | Daily monitor unassigned hackathon GFIs                    | [#30](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/30)    | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-18   | Add AI disclosure to `README.md`                           | [#31](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/31)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-19   | Draft demo narrative outline (refresh `Demo/Narrative.md`) | [#32](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/32)    |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P1-20   | Daily refresh `Demo/CompetitiveMatrix.md`                  | [#33](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/33)    | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| Task ID | Description                                                | Issue                                                                    | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ---------------------------------------------------------- | ------------------------------------------------------------------------ | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P1-16   | Polish public README (1-liner, features, setup)            | [#29](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/29) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-17   | Daily monitor unassigned hackathon GFIs                    | [#30](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/30) | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-18   | Add AI disclosure to `README.md`                           | [#31](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/31) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-19   | Draft demo narrative outline (refresh `Demo/Narrative.md`) | [#32](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/32) |     | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P1-20   | Daily refresh `Demo/CompetitiveMatrix.md`                  | [#33](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/33) | n/a | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### Phase 1 Exit Gate
 
-- [ ] MCP client connects and returns search results
-- [ ] Chat UI scaffold renders on localhost
-- [ ] `README.md` and `CLAUDE.md` present in repo
-- [ ] `Validation/QualityGates.md` Gate 0 + Gate 1 green
-- [ ] Intent comments posted on #26645 + #26608
+- [/] MCP client **code** complete (`om_mcp`); end-to-end search against a live OM 1.6.x still depends on correct **`OM_MCP_HTTP_PATH`**, Bot JWT, and ES search index (see seed README + `trigger_om_search_reindex.py`).
+- [x] Chat UI scaffold present (`ui/` + `package.json`); run `npm run dev` in `ui/` for `:3000`.
+- [x] `README.md` and `CLAUDE.md` present in repo
+- [/] `Validation/QualityGates.md` Gate 0 + Gate 1 — run locally / CI before declaring green
+- [x] Intent comments posted on #26645 + #26608 (per Phase 0)
 
 ---
 
@@ -162,7 +176,7 @@ Each row uses the same 8-step lifecycle. Check the boxes inline:
 | P2-01   | Auto-classification: scan + LLM classify + HITL + `patch_entity` | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 | P2-02   | Lineage impact analysis report with Tier warnings                | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 | P2-03   | Multi-step agent: chain 3+ tool calls per turn                   | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P2-04   | FastAPI `POST /chat` wired to LangGraph agent                    | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-04   | FastAPI `POST /api/v1/chat` wired to LangGraph agent             | #\_\_ | #\_\_ | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
 | P2-05   | Review all Phase 2 PRs (full PR-Review checklist)                | #\_\_ | n/a   | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### @PriyankaSen0902
@@ -171,10 +185,10 @@ Each row uses the same 8-step lifecycle. Check the boxes inline:
 | ------- | ---------------------------------------------------------------- | ----- | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
 | P2-06   | NL query engine: text → intent → tool → Markdown                 | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 | P2-07   | Governance summary: tag coverage %, PII %, unclassified count    | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P2-08   | Retry + circuit breaker + structured error envelope on MCP calls | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-08   | Retry + circuit breaker + structured error envelope on MCP calls | #\_\_ | #\_\_ | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
 | P2-09   | Integration tests including circuit-breaker-open paths           | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 | P2-10b  | `services/prompt_safety.neutralize` + 5-pattern test file        | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P2-11b  | `observability/redact.py` + `middleware/error_envelope.py`       | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-11b  | `observability/redact.py` + `middleware/error_envelope.py`       | #\_\_ | #\_\_ | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
 
 ### @aravindsai003
 
@@ -184,7 +198,7 @@ Each row uses the same 8-step lifecycle. Check the boxes inline:
 | P2-11   | Render structured responses (markdown + sanitize, no innerHTML)     | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 | P2-12   | HITL confirmation modal (tool name, risk, FQN list, Confirm/Cancel) | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 | P2-13   | E2E test including the prompt-injection demo flow                   | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
-| P2-13b  | Build + commit `seed/customer_db.json` and `scripts/load_seed.py`   | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-13b  | Build + commit `seed/customer_db.json` and `scripts/load_seed.py`   | #\_\_ | #\_\_ | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
 
 ### @5009226-bhawikakumari
 

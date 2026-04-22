@@ -56,6 +56,9 @@ dependencies = [
     "pydantic>=2.6.0,<3.0.0",
     "pydantic-settings>=2.1.0,<3.0.0",
 
+    # Scripts (load_seed, trigger_om_search_reindex) read AI_SDK_TOKEN from repo .env
+    "python-dotenv>=1.0.0,<2.0.0",
+
     # HTTP client (replaces requests; timeout-default)
     "httpx>=0.26.0,<0.30.0",
 

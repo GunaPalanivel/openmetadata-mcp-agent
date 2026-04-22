@@ -647,6 +647,7 @@ async def run_chat_turn(
                 "tool_name": r.get("tool_name", ""),
                 "duration_ms": r.get("duration_ms"),
                 "success": r.get("success"),
+                "error_code": r.get("error_code"),
             }
             for r in final_state.get("tool_records", [])
         ],

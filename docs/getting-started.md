@@ -4,12 +4,12 @@ Get the agent running on your laptop in under 5 minutes.
 
 ## Prerequisites
 
-| Tool | Version | Notes |
-|------|---------|-------|
-| Python | 3.11+ | 3.12 also OK; older versions not supported |
-| Node.js | 20+ | For the UI |
-| Docker | Recent | For OpenMetadata |
-| Git | Recent | |
+| Tool    | Version | Notes                                      |
+| ------- | ------- | ------------------------------------------ |
+| Python  | 3.11+   | 3.12 also OK; older versions not supported |
+| Node.js | 20+     | For the UI                                 |
+| Docker  | Recent  | For OpenMetadata                           |
+| Git     | Recent  |                                            |
 
 ## Step 1: Clone
 
@@ -71,7 +71,7 @@ python scripts/generate_bot_jwt.py --username admin@example.com
 ## Step 4: Configure secrets
 
 ```bash
-cp .env.example .env
+make setup
 # Edit .env with your editor; paste:
 #   AI_SDK_TOKEN=<the JWT from step 3>
 #   OPENAI_API_KEY=<your OpenAI key from platform.openai.com/api-keys>
@@ -116,7 +116,7 @@ In the UI, click **Check backend health** — should show `status: ok`.
 You forgot to copy `.env.example` to `.env` or didn't paste a real key. Fix:
 
 ```bash
-cp .env.example .env
+make setup
 # edit .env
 ```
 
