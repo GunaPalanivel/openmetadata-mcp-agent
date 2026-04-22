@@ -65,7 +65,7 @@ make demo
 # UI      → http://localhost:3000
 ```
 
-Full step-by-step including how to generate the OpenMetadata Bot JWT: [docs/getting-started.md](docs/getting-started.md).
+UI-only quickstart and P1-14 checklist: [ui/README.md](ui/README.md). Full step-by-step including how to generate the OpenMetadata Bot JWT: [docs/getting-started.md](docs/getting-started.md).
 
 ---
 

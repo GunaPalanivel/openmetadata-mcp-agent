@@ -41,7 +41,7 @@ Each row uses the same 8-step lifecycle. Check the boxes inline:
 
 ---
 
-## Codebase snapshot — 2026-04-22
+## Codebase snapshot — 2026-04-23
 
 Authoritative paths are under the repo root (`openmetadata-mcp-agent/`); links below are relative to **this** `.idea/Plan/` folder.
 
@@ -52,6 +52,7 @@ Authoritative paths are under the repo root (`openmetadata-mcp-agent/`); links b
 - **Smoke**: [`../../scripts/smoke_test.py`](../../scripts/smoke_test.py) — optional `--include-om`; on chat audit failure prints **HINT** (logs + reindex script).
 - **Local OM stack**: [`../../infrastructure/docker-compose.om.yml`](../../infrastructure/docker-compose.om.yml) — OpenMetadata **1.6.2** (`docker.getcollate.io/openmetadata/server:1.6.2`) + MySQL + Elasticsearch; agent compose is [`../../infrastructure/docker-compose.yml`](../../infrastructure/docker-compose.yml) (OM is a separate client dependency).
 - **Tests**: `pytest tests/unit` — includes MCP wrapper ([`../../tests/unit/test_om_mcp.py`](../../tests/unit/test_om_mcp.py)), seed loader ([`../../tests/unit/test_load_seed.py`](../../tests/unit/test_load_seed.py)), settings / runtime guard ([`../../tests/unit/test_settings.py`](../../tests/unit/test_settings.py)), smoke script ([`../../tests/unit/test_smoke_script.py`](../../tests/unit/test_smoke_script.py)).
+- **UI (P1-14 / [\#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27))**: [`../../ui/`](../../ui/) Vite + React 18; **[`../../ui/README.md`](../../ui/README.md)** — runbook (`npm ci`, `npm run dev`, `http://localhost:3000`, console checklist). Committed **[`../../ui/package-lock.json`](../../ui/package-lock.json)** (repro installs; **`make install_ui`** and CI **`ui-build`** use **`npm ci`**). **[`../../ui/public/favicon.svg`](../../ui/public/favicon.svg)** satisfies `index.html` `/favicon.svg`. **`@types/react-dom`** pinned to ^18.3.0 in [`../../ui/package.json`](../../ui/package.json). Delivery PR: [\#73](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/73) (open until merged to `main`).
 
 ---
 
@@ -94,7 +95,7 @@ Authoritative paths are under the repo root (`openmetadata-mcp-agent/`); links b
 3. P1-07 → P1-08 → P1-09 (PSTL: SDK study + tool map + typed wrappers) — feeds GSA's agent.
 4. P1-03 → P1-04 → P1-05 (GSA: MCP client + agent skeleton + verify).
 5. P1-12 → P1-13 (ATL: Swagger/Bot JWT + seed 50+ tables).
-6. P1-14 (ATL: scaffold React UI).
+6. P1-14 (ATL: confirm UI scaffold on `:3000`, [\#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27) / [\#73](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/73)).
 7. P1-10 (PSTL: 10+ unit tests for MCP wrapper).
 8. P1-15 (ATL: README setup steps).
 9. P1-16 → P1-18 (BSE: README + AI disclosure).
@@ -128,7 +129,7 @@ Authoritative paths are under the repo root (`openmetadata-mcp-agent/`); links b
 | P1-11   | Local OM at `:8585` via `infrastructure/docker-compose.om.yml` | [#24](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/24) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
 | P1-12   | Generate Bot JWT, share privately                              | [#25](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/25) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
 | P1-13   | Pre-seed OM with 50+ realistic tables                          | [#26](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/26) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
-| P1-14   | Confirm UI scaffold runs on `:3000`                            | [#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-14   | Confirm UI scaffold runs on `:3000`                            | [#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27) | [#73](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/73) | [x] | [x] | [x] | [x] | [x] | [x]       | [ ] | [ ] |
 | P1-15   | Document setup in `README.md` (clone to run in 5 min)          | [#28](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/28) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
 
 ### @5009226-bhawikakumari
@@ -144,7 +145,7 @@ Authoritative paths are under the repo root (`openmetadata-mcp-agent/`); links b
 ### Phase 1 Exit Gate
 
 - [/] MCP client **code** complete (`om_mcp`); end-to-end search against a live OM 1.6.x still depends on correct **`OM_MCP_HTTP_PATH`**, Bot JWT, and ES search index (see seed README + `trigger_om_search_reindex.py`).
-- [x] Chat UI scaffold present (`ui/` + `package.json`); run `npm run dev` in `ui/` for `:3000`.
+- [x] Chat UI scaffold present (`ui/` + `package.json` + `package-lock.json`); `npm ci` then `npm run dev` in `ui/` for `:3000` (see [`ui/README.md`](../../ui/README.md)); PR [\#73](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/73).
 - [x] `README.md` and `CLAUDE.md` present in repo
 - [/] `Validation/QualityGates.md` Gate 0 + Gate 1 — run locally / CI before declaring green
 - [x] Intent comments posted on #26645 + #26608 (per Phase 0)

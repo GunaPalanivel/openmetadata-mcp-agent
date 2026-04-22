@@ -95,6 +95,8 @@ make demo
 # UI:      http://localhost:3000
 ```
 
+UI-only checks (port `:3000`, console clean): [`ui/README.md`](../ui/README.md). `make install_dev_env` runs `npm ci` under `ui/` using the committed lockfile.
+
 ## Step 6: Verify
 
 In a new terminal:

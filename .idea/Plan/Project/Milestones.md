@@ -36,7 +36,7 @@
 
 ### Exit Gate
 - [ ] `python -m copilot search "show me tables"` returns results
-- [ ] Chat UI renders on `localhost:3000`
+- [x] Chat UI runs on `localhost:3000` (Vite; verification steps in [`ui/README.md`](../../ui/README.md); PR [\#73](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/73))
 - [ ] All Plan/ files committed
 
 ---
