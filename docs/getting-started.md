@@ -46,13 +46,17 @@ The agent authenticates to OpenMetadata's MCP server using a Bot JWT.
 
 ```bash
 # Generates a 30-day JWT and prints it for you to paste into .env
+# Tries admin/admin first, then admin@open-metadata.org/admin on basic-auth installs.
 make om-gen-token
 
-# Custom expiry (OM supports 1/7/30/60/90 days or Unlimited)
+# Custom expiry (OM 1.6.2 supports 7/30/60/90 days or Unlimited)
 python scripts/generate_bot_jwt.py --expiry-days 60
 
 # Custom OM host
 python scripts/generate_bot_jwt.py --host http://remote-om:8585
+
+# Custom login identifier for installs with a different principal domain
+python scripts/generate_bot_jwt.py --username admin@example.com
 ```
 
 ### Option B: Manual (via OM UI)

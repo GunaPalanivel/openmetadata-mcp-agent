@@ -16,7 +16,7 @@ Connects to the OM REST API, authenticates as admin, looks up the
 ingestion-bot, and generates a JWT with configurable expiry.  The token
 is printed to stdout so the user can paste it into .env as AI_SDK_TOKEN.
 
-The script uses only stdlib + httpx (project standard — no ``requests``).
+The script uses only the Python standard library via ``urllib``.
 
 Usage:
     python scripts/generate_bot_jwt.py
@@ -27,6 +27,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import http.client
 import json
 import os
 import sys
@@ -38,9 +39,10 @@ DEFAULT_OM_URL = "http://localhost:8585"
 API_PREFIX = "/api/v1"
 BOT_NAME = "ingestion-bot"
 REQUEST_TIMEOUT = 10
+DEFAULT_ADMIN_USERNAME = "admin"
+DEFAULT_ADMIN_EMAIL = "admin@open-metadata.org"
 
 EXPIRY_MAP: dict[int, str] = {
-    1: "1",
     7: "7",
     30: "30",
     60: "60",
@@ -58,7 +60,12 @@ def _api_request(
 ) -> dict[str, Any] | None:
     """Make an HTTP request to the OM REST API."""
     body = json.dumps(data).encode("utf-8") if data else None
-    req = urllib.request.Request(url, data=body, headers=headers or {}, method=method)
+    req = urllib.request.Request(  # noqa: S310 - OM URL is local or explicitly user-supplied
+        url,
+        data=body,
+        headers=headers or {},
+        method=method,
+    )
     try:
         with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:  # noqa: S310
             return json.loads(resp.read().decode("utf-8"))
@@ -69,7 +76,7 @@ def _api_request(
             file=sys.stderr,
         )
         return None
-    except (urllib.error.URLError, TimeoutError) as exc:
+    except (urllib.error.URLError, TimeoutError, http.client.HTTPException) as exc:
         print(f"FAIL: {method} {url} -> {exc}", file=sys.stderr)
         return None
 
@@ -78,6 +85,8 @@ def _resolve_expiry(days: int) -> str:
     """Map user-requested expiry days to the OM JWTTokenExpiry enum value."""
     if days in EXPIRY_MAP:
         return EXPIRY_MAP[days]
+    if days < 0:
+        days = 0
     closest = min(EXPIRY_MAP.keys(), key=lambda k: abs(k - days) if k > 0 else 9999)
     print(
         f"  (OM supports expiry of {sorted(k for k in EXPIRY_MAP if k > 0)} days "
@@ -88,32 +97,62 @@ def _resolve_expiry(days: int) -> str:
 
 def check_health(base_url: str) -> bool:
     """Verify the OM server is reachable and healthy."""
-    url = f"{base_url}{API_PREFIX}/system/version"
+    url = f"{base_url}{API_PREFIX}/health"
     result = _api_request(url)
     if result is None:
         return False
-    version = result.get("version", "unknown")
-    print(f"  OM server reachable — version {version}")
+    status = result.get("status")
+    if status != "healthy":
+        print(f"FAIL: health check returned unexpected payload: {result}", file=sys.stderr)
+        return False
+    print("  OM server reachable — health=healthy")
     return True
+
+
+def _login_candidates(username: str) -> list[str]:
+    """Return the login identifiers to try for the provided username."""
+    if username == DEFAULT_ADMIN_USERNAME:
+        return [DEFAULT_ADMIN_USERNAME, DEFAULT_ADMIN_EMAIL]
+    return [username]
+
+
+def _extract_access_token(result: dict[str, Any]) -> str | None:
+    """Extract an access token from an OM login response."""
+    token = result.get("accessToken")
+    if isinstance(token, str) and token:
+        return token
+
+    token_data = result.get("data", {})
+    if isinstance(token_data, dict):
+        nested_token = token_data.get("accessToken")
+        if isinstance(nested_token, str) and nested_token:
+            return nested_token
+
+    return None
 
 
 def login_admin(base_url: str, username: str, password: str) -> str | None:
     """Authenticate as admin and return a session JWT."""
     url = f"{base_url}{API_PREFIX}/users/login"
-    payload = {"email": username, "password": password}
     headers = {"Content-Type": "application/json"}
-    result = _api_request(url, method="POST", data=payload, headers=headers)
-    if result is None:
-        return None
-    token = result.get("accessToken") or result.get("tokenType")
-    if not token:
-        token_data = result.get("data", {})
-        if isinstance(token_data, dict):
-            token = token_data.get("accessToken")
-    if not token:
-        print(f"FAIL: login response missing accessToken: {result}", file=sys.stderr)
-        return None
-    return token
+
+    final_result: dict[str, Any] | None = None
+    for candidate in _login_candidates(username):
+        payload = {"email": candidate, "password": password}
+        result = _api_request(url, method="POST", data=payload, headers=headers)
+        if result is None:
+            continue
+
+        final_result = result
+        token = _extract_access_token(result)
+        if token:
+            if candidate != username:
+                print(f"  Login required email-form username; retried as {candidate}.")
+            return token
+
+    if final_result is not None:
+        print(f"FAIL: login response missing accessToken: {final_result}", file=sys.stderr)
+    return None
 
 
 def get_bot_user(base_url: str, auth_token: str) -> dict[str, Any] | None:
@@ -206,12 +245,15 @@ def main() -> int:
         "--expiry-days",
         type=int,
         default=30,
-        help="Token expiry in days (default: 30; OM supports 1/7/30/60/90/Unlimited)",
+        help="Token expiry in days (default: 30; OM supports 7/30/60/90 or 0=Unlimited)",
     )
     parser.add_argument(
         "--username",
-        default="admin",
-        help="OM admin username (default: admin)",
+        default=DEFAULT_ADMIN_USERNAME,
+        help=(
+            "OM admin login identifier (default: admin; also retries "
+            "admin@open-metadata.org on basic-auth installs)"
+        ),
     )
     parser.add_argument(
         "--password",
@@ -240,7 +282,8 @@ def main() -> int:
     admin_token = login_admin(base_url, args.username, args.password)
     if admin_token is None:
         print(
-            "\nERROR: Admin login failed. Check credentials (default: admin/admin).",
+            "\nERROR: Admin login failed. Check credentials "
+            "(default: admin/admin; some installs require admin@open-metadata.org).",
             file=sys.stderr,
         )
         return 1

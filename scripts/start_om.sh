@@ -86,6 +86,7 @@ print_next_steps() {
     echo ""
     echo "  UI:      http://localhost:8585"
     echo "  Login:   admin / admin"
+    echo "           (some basic-auth installs use admin@open-metadata.org / admin)"
     echo "  Health:  curl ${HEALTH_URL}"
     echo ""
     echo "  Next steps:"

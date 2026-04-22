@@ -20,13 +20,12 @@ from __future__ import annotations
 
 import json
 import sys
+from http.client import RemoteDisconnected
 from io import BytesIO
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError, URLError
-
-import pytest
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -67,6 +66,9 @@ class TestResolveExpiry:
     def test_exact_match_unlimited(self) -> None:
         assert generate_bot_jwt._resolve_expiry(0) == "Unlimited"
 
+    def test_rounds_unsupported_one_day_up_to_seven(self) -> None:
+        assert generate_bot_jwt._resolve_expiry(1) == "7"
+
     def test_rounds_to_nearest(self) -> None:
         result = generate_bot_jwt._resolve_expiry(25)
         assert result == "30"
@@ -75,7 +77,7 @@ class TestResolveExpiry:
 class TestCheckHealth:
     @patch("generate_bot_jwt.urllib.request.urlopen")
     def test_healthy_server(self, mock_urlopen: MagicMock) -> None:
-        mock_urlopen.return_value = _mock_response({"version": "1.6.2"})
+        mock_urlopen.return_value = _mock_response({"status": "healthy"})
         assert generate_bot_jwt.check_health("http://localhost:8585") is True
 
     @patch("generate_bot_jwt.urllib.request.urlopen")
@@ -83,25 +85,67 @@ class TestCheckHealth:
         mock_urlopen.side_effect = URLError("Connection refused")
         assert generate_bot_jwt.check_health("http://localhost:8585") is False
 
+    @patch("generate_bot_jwt.urllib.request.urlopen")
+    def test_remote_disconnect_is_handled(self, mock_urlopen: MagicMock) -> None:
+        mock_urlopen.side_effect = RemoteDisconnected(
+            "Remote end closed connection without response"
+        )
+        assert generate_bot_jwt.check_health("http://localhost:8585") is False
+
+    @patch("generate_bot_jwt.urllib.request.urlopen")
+    def test_unhealthy_payload(self, mock_urlopen: MagicMock) -> None:
+        mock_urlopen.return_value = _mock_response({"status": "starting"})
+        assert generate_bot_jwt.check_health("http://localhost:8585") is False
+
 
 class TestLoginAdmin:
     @patch("generate_bot_jwt.urllib.request.urlopen")
     def test_successful_login(self, mock_urlopen: MagicMock) -> None:
-        mock_urlopen.return_value = _mock_response(
-            {"accessToken": "admin-jwt-token-123"}
-        )
+        mock_urlopen.return_value = _mock_response({"accessToken": "admin-jwt-token-123"})
         token = generate_bot_jwt.login_admin("http://localhost:8585", "admin", "admin")
         assert token == "admin-jwt-token-123"
 
     @patch("generate_bot_jwt.urllib.request.urlopen")
+    def test_successful_login_falls_back_to_admin_email(self, mock_urlopen: MagicMock) -> None:
+        mock_urlopen.side_effect = [
+            _mock_http_error(401, '{"message":"Unauthorized"}'),
+            _mock_response({"accessToken": "admin-jwt-token-123"}),
+        ]
+
+        token = generate_bot_jwt.login_admin("http://localhost:8585", "admin", "admin")
+
+        assert token == "admin-jwt-token-123"
+        request_calls = mock_urlopen.call_args_list
+        assert len(request_calls) == 2
+        first_request = request_calls[0].args[0]
+        second_request = request_calls[1].args[0]
+        assert json.loads(first_request.data.decode("utf-8"))["email"] == "admin"
+        assert json.loads(second_request.data.decode("utf-8"))["email"] == "admin@open-metadata.org"
+
+    @patch("generate_bot_jwt.urllib.request.urlopen")
     def test_login_failure_401(self, mock_urlopen: MagicMock) -> None:
-        mock_urlopen.side_effect = _mock_http_error(401, '{"message":"Unauthorized"}')
+        mock_urlopen.side_effect = [
+            _mock_http_error(401, '{"message":"Unauthorized"}'),
+            _mock_http_error(401, '{"message":"Unauthorized"}'),
+        ]
         token = generate_bot_jwt.login_admin("http://localhost:8585", "admin", "wrong")
         assert token is None
 
     @patch("generate_bot_jwt.urllib.request.urlopen")
     def test_login_missing_access_token(self, mock_urlopen: MagicMock) -> None:
-        mock_urlopen.return_value = _mock_response({"some_other_field": "value"})
+        mock_urlopen.side_effect = [
+            _mock_response({"some_other_field": "value"}),
+            _mock_response({"some_other_field": "value"}),
+        ]
+        token = generate_bot_jwt.login_admin("http://localhost:8585", "admin", "admin")
+        assert token is None
+
+    @patch("generate_bot_jwt.urllib.request.urlopen")
+    def test_login_rejects_token_type_without_access_token(self, mock_urlopen: MagicMock) -> None:
+        mock_urlopen.side_effect = [
+            _mock_response({"tokenType": "Bearer"}),
+            _mock_response({"tokenType": "Bearer"}),
+        ]
         token = generate_bot_jwt.login_admin("http://localhost:8585", "admin", "admin")
         assert token is None
 
@@ -225,9 +269,7 @@ class TestMain:
 
     @patch("generate_bot_jwt.login_admin")
     @patch("generate_bot_jwt.check_health")
-    def test_login_failure(
-        self, mock_health: MagicMock, mock_login: MagicMock
-    ) -> None:
+    def test_login_failure(self, mock_health: MagicMock, mock_login: MagicMock) -> None:
         mock_health.return_value = True
         mock_login.return_value = None
 
