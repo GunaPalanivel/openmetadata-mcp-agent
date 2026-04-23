@@ -17,7 +17,9 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
 
-def _urlopen_context(payload: dict[str, object]):
+from typing import Any
+
+def _urlopen_context(payload: dict[str, Any]) -> Any:
     from unittest.mock import MagicMock
 
     response = MagicMock()
@@ -31,7 +33,7 @@ def _urlopen_context(payload: dict[str, object]):
 
 class TestCheckChat:
     def test_accepts_any_successful_audit_entry(self):
-        import smoke_test
+        import smoke_test  # type: ignore[import-not-found]
 
         payload = {
             "request_id": "req-1",

@@ -23,6 +23,7 @@ from __future__ import annotations
 import asyncio
 import os
 from collections.abc import Iterator
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -91,7 +92,7 @@ class TestDriftEndpoint:
             "tags": [{"tagFQN": "Tier.Tier1"}],
         }
 
-        def mock_call_tool(name: str, args: dict) -> dict:
+        def mock_call_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
             if name == "search_metadata":
                 return mock_search
             return mock_entity
@@ -124,7 +125,7 @@ class TestDriftEndpoint:
         }
 
         # First scan: establish baseline
-        def mock_call_tool_v1(name: str, args: dict) -> dict:
+        def mock_call_tool_v1(name: str, args: dict[str, Any]) -> dict[str, Any]:
             if name == "search_metadata":
                 return mock_search
             return original_entity
@@ -133,7 +134,7 @@ class TestDriftEndpoint:
             asyncio.run(run_drift_scan())
 
         # Second scan: entity changed
-        def mock_call_tool_v2(name: str, args: dict) -> dict:
+        def mock_call_tool_v2(name: str, args: dict[str, Any]) -> dict[str, Any]:
             if name == "search_metadata":
                 return mock_search
             return modified_entity

@@ -22,6 +22,7 @@ Tests cover:
 from __future__ import annotations
 
 import os
+from typing import Any
 
 # Set safe defaults BEFORE any app import
 os.environ.setdefault("AI_SDK_TOKEN", "test-token-placeholder-not-real-jwt")
@@ -86,7 +87,7 @@ class TestHashEntity:
         assert _hash_entity(entity_a) != _hash_entity(entity_b)
 
     def test_tag_addition_changes_hash(self) -> None:
-        entity_a = {"tags": []}
+        entity_a: dict[str, Any] = {"tags": []}
         entity_b = {"tags": [{"tagFQN": "PII.Sensitive"}]}
         assert _hash_entity(entity_a) != _hash_entity(entity_b)
 
@@ -174,7 +175,7 @@ class TestDetectDrift:
         assert items[0].entity_fqn == "db.schema.table1"
 
     def test_governance_tag_removed_returns_tag_missing(self) -> None:
-        entity = {"tags": [], "columns": []}
+        entity: dict[str, Any] = {"tags": [], "columns": []}
         items = detect_drift(
             entity_fqn="db.schema.table1",
             entity_type="table",
