@@ -144,7 +144,7 @@ class LineageNode(BaseModel):
 
 ### `GovernanceState` (enum)
 
-Per-entity lifecycle for the governance engine ([FeatureDev/GovernanceEngine.md](../FeatureDev/GovernanceEngine.md)). Stored in-memory in v1; optionally mirrored to OM custom properties.
+Per-entity lifecycle for the governance engine ([FeatureDev/GovernanceEngine.md](../FeatureDev/GovernanceEngine.md)). Stored in-memory in v1; optionally mirrored to OM custom properties. **Implemented** in [`src/copilot/models/governance_state.py`](../../src/copilot/models/governance_state.py) (`GovernanceState`, `ALLOWED_TRANSITIONS`).
 
 ```python
 from enum import StrEnum
@@ -163,7 +163,7 @@ Valid transitions are enforced in `governance_store` — see GovernanceEngine sp
 
 ### `EntityGovernanceRecord`
 
-One row per **entity FQN** under governance.
+One row per **entity FQN** under governance. **Implemented** in [`src/copilot/models/governance_record.py`](../../src/copilot/models/governance_record.py); rows are held by [`src/copilot/services/governance_store.py`](../../src/copilot/services/governance_store.py).
 
 ```python
 class EntityGovernanceRecord(BaseModel):

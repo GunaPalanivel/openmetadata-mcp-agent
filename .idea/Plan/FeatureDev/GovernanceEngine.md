@@ -57,6 +57,8 @@ ALLOWED_TRANSITIONS: dict[GovernanceState, frozenset[GovernanceState]] = {
 
 `governance_store.transition(fqn, new_state, evidence)` raises on illegal transitions; `get_or_create(fqn)` seeds `UNKNOWN`.
 
+**Implementation (P2-20 / #76):** `GovernanceState` + `ALLOWED_TRANSITIONS` — [`src/copilot/models/governance_state.py`](../../src/copilot/models/governance_state.py); `EntityGovernanceRecord` — [`src/copilot/models/governance_record.py`](../../src/copilot/models/governance_record.py); store — [`src/copilot/services/governance_store.py`](../../src/copilot/services/governance_store.py). Confirm-path and graph hooks remain **#77**.
+
 ## Session proposals (P2-19)
 
 - **Store**: `Dict[str, PendingSession]` or `Dict[UUID, ...]` keyed by `session_id` string; value holds `pending: ToolCallProposal | None`, `expires_at`.
