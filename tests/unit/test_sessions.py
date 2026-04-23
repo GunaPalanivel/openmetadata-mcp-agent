@@ -47,9 +47,7 @@ def _write_proposal(
 ) -> ToolCallProposal:
     rid = session_request_id or uuid4()
     pid = proposal_id if proposal_id is not None else uuid4()
-    exp = datetime.now(UTC) + (
-        expires_delta if expires_delta is not None else timedelta(minutes=5)
-    )
+    exp = datetime.now(UTC) + (expires_delta if expires_delta is not None else timedelta(minutes=5))
     return ToolCallProposal(
         proposal_id=pid,
         request_id=rid,
@@ -121,9 +119,7 @@ async def test_confirm_reject_does_not_call_mcp() -> None:
         "copilot.services.sessions.enqueue_writeback_for_state",
         new_callable=AsyncMock,
     ) as m:
-        out = await confirm_chat_proposal(
-            sid, prop.proposal_id, False, request_id=uuid4()
-        )
+        out = await confirm_chat_proposal(sid, prop.proposal_id, False, request_id=uuid4())
 
     m.assert_not_awaited()
     assert out["audit_log"] == []
