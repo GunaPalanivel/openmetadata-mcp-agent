@@ -19,7 +19,7 @@
 | **W2** | Apr 24–25    | [#80](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/80)–[#85](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/85) | Auto-classify, lineage, NL query, UI + HITL modal, OM-native UI                                |
 | **W3** | Apr 25–26    | [#86](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/86)–[#90](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/90) | Multi-MCP, integration/security/coverage, CI gaps, demo automation, **E2E Playwright**         |
 
-**Issue index**: [SPRINT16_GITHUB_ISSUES.md](./SPRINT16_GITHUB_ISSUES.md) · [SPRINT16_GITHUB_ISSUES.json](./SPRINT16_GITHUB_ISSUES.json) · Creator script: [`scripts/create_sixteen_engineering_issues.py`](../../scripts/create_sixteen_engineering_issues.py)
+**Issue index**: [SPRINT16_GITHUB_ISSUES.md](./SPRINT16_GITHUB_ISSUES.md) · [SPRINT16_GITHUB_ISSUES.json](./SPRINT16_GITHUB_ISSUES.json) · Creator script: not committed in this repo; use the issue index files above as the canonical source.
 
 **Issue bodies**: Mandatory template — [PR-Review/EngineeringIssueTemplate.md](./PR-Review/EngineeringIssueTemplate.md) (Context, What to do, Done when, Depends on, Unblocks, Acceptance criteria with PRD + APIContract + tests, References).
 
