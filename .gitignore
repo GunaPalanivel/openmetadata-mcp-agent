@@ -36,6 +36,10 @@
 # Local scratch / hackathon prompt dump (never commit)
 Task.md
 
+# Local issue tooling / PR body drafts (not required for build; Plan stays tracked)
+scripts/create_sixteen_engineering_issues.py
+pr_body_*.md
+
 # ---------------------------------------------------------------------------
 # Python
 # ---------------------------------------------------------------------------
