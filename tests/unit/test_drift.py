@@ -32,12 +32,10 @@ os.environ.setdefault("LOG_LEVEL", "warning")
 
 from copilot.services.drift import (
     DriftSignal,
-    DriftSnapshot,
     _extract_tag_fqns,
     _hash_entity,
     detect_drift,
 )
-
 
 # ---------------------------------------------------------------------------
 # Hash computation

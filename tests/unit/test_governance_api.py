@@ -36,7 +36,7 @@ os.environ.setdefault("PORT", "8000")
 os.environ.setdefault("LOG_LEVEL", "warning")
 
 from copilot.middleware.error_envelope import McpUnavailable
-from copilot.services.drift import DriftSnapshot, reset_state, run_drift_scan
+from copilot.services.drift import reset_state, run_drift_scan
 
 
 @pytest.fixture(autouse=True)
@@ -50,7 +50,11 @@ def _clean_drift_state() -> Iterator[None]:
 @pytest.fixture
 def client() -> Iterator[TestClient]:
     """FastAPI test client with drift poll disabled (no background tasks)."""
-    with patch("copilot.api.main._drift_poll_loop", return_value=asyncio.sleep(0)):
+
+    async def _dummy(*args, **kwargs):
+        pass
+
+    with patch("copilot.api.main._drift_poll_loop", side_effect=_dummy):
         from copilot.api.main import create_app
 
         app = create_app()

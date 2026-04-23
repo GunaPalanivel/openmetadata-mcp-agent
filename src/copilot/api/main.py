@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from datetime import UTC, datetime
 from typing import Any
 
@@ -88,10 +88,8 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     yield
 
     drift_task.cancel()
-    try:
+    with suppress(asyncio.CancelledError):
         await drift_task
-    except asyncio.CancelledError:
-        pass
     log.info("app.shutdown")
 
 

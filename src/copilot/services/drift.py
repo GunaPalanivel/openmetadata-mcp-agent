@@ -79,21 +79,21 @@ def get_latest_snapshot() -> DriftSnapshot:
 def _hash_entity(entity: dict[str, Any]) -> str:
     """Produce a stable SHA-256 hash of governance-relevant entity fields."""
     relevant = {
-        "description": entity.get("description", ""),
+        "description": entity.get("description", "") or "",
         "columns": sorted(
             [
                 {
                     "name": c.get("name", ""),
                     "dataType": c.get("dataType", ""),
                     "tags": sorted(
-                        [t.get("tagFQN", "") for t in c.get("tags", [])],
+                        [t.get("tagFQN", "") for t in (c.get("tags") or [])],
                     ),
                 }
-                for c in entity.get("columns", [])
+                for c in (entity.get("columns") or [])
             ],
             key=lambda c: c["name"],
         ),
-        "tags": sorted([t.get("tagFQN", "") for t in entity.get("tags", [])]),
+        "tags": sorted([t.get("tagFQN", "") for t in (entity.get("tags") or [])]),
     }
     blob = json.dumps(relevant, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(blob.encode()).hexdigest()
@@ -102,12 +102,12 @@ def _hash_entity(entity: dict[str, Any]) -> str:
 def _extract_tag_fqns(entity: dict[str, Any]) -> set[str]:
     """Extract all tag FQNs from an entity (top-level + column-level)."""
     tags: set[str] = set()
-    for t in entity.get("tags", []):
+    for t in entity.get("tags") or []:
         fqn = t.get("tagFQN", "")
         if fqn:
             tags.add(fqn)
-    for col in entity.get("columns", []):
-        for t in col.get("tags", []):
+    for col in entity.get("columns") or []:
+        for t in col.get("tags") or []:
             fqn = t.get("tagFQN", "")
             if fqn:
                 tags.add(fqn)
@@ -160,32 +160,30 @@ def detect_drift(
         current_tags = _extract_tag_fqns(current)
 
         # Governance tags that were present in baseline but are now missing
-        for tag in baseline_tags:
-            if any(tag.startswith(p) for p in _GOVERNANCE_TAG_PREFIXES):
-                if tag not in current_tags:
-                    items.append(
-                        DriftItem(
-                            entity_fqn=entity_fqn,
-                            entity_type=entity_type,
-                            signal=DriftSignal.TAG_MISSING,
-                            detail=f"Governance tag '{tag}' was removed",
-                            detected_at=now,
-                        )
-                    )
+        items.extend(
+            DriftItem(
+                entity_fqn=entity_fqn,
+                entity_type=entity_type,
+                signal=DriftSignal.TAG_MISSING,
+                detail=f"Governance tag '{tag}' was removed",
+                detected_at=now,
+            )
+            for tag in baseline_tags
+            if any(tag.startswith(p) for p in _GOVERNANCE_TAG_PREFIXES) and tag not in current_tags
+        )
 
         # Governance tags that appeared but were not in baseline
-        for tag in current_tags:
-            if any(tag.startswith(p) for p in _GOVERNANCE_TAG_PREFIXES):
-                if tag not in baseline_tags:
-                    items.append(
-                        DriftItem(
-                            entity_fqn=entity_fqn,
-                            entity_type=entity_type,
-                            signal=DriftSignal.TAG_UNEXPECTED,
-                            detail=f"New governance tag '{tag}' appeared",
-                            detected_at=now,
-                        )
-                    )
+        items.extend(
+            DriftItem(
+                entity_fqn=entity_fqn,
+                entity_type=entity_type,
+                signal=DriftSignal.TAG_UNEXPECTED,
+                detail=f"New governance tag '{tag}' appeared",
+                detected_at=now,
+            )
+            for tag in current_tags
+            if any(tag.startswith(p) for p in _GOVERNANCE_TAG_PREFIXES) and tag not in baseline_tags
+        )
 
     return items
 
@@ -207,7 +205,7 @@ async def run_drift_scan() -> DriftSnapshot:
     Returns:
         The new DriftSnapshot (also stored in module-level ``_latest_snapshot``).
     """
-    global _latest_snapshot  # noqa: PLW0603
+    global _latest_snapshot
 
     log.info("drift.scan.start")
     now = datetime.now(UTC).isoformat()
@@ -285,7 +283,7 @@ async def run_drift_scan() -> DriftSnapshot:
 
 def reset_state() -> None:
     """Reset all module-level state. For testing only."""
-    global _latest_snapshot  # noqa: PLW0603
+    global _latest_snapshot
     _baseline_hashes.clear()
     _baseline_tags.clear()
     _latest_snapshot = DriftSnapshot()
