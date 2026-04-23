@@ -137,6 +137,33 @@ class TestSelectTools:
         result = await select_tools(base_state)
         assert result["tool_proposals"] == []
 
+    @patch("copilot.services.agent.openai_client.call_chat_json", new_callable=AsyncMock)
+    async def test_classify_intent_uses_deterministic_tool_chain(
+        self, mock_llm: AsyncMock, base_state: AgentState
+    ) -> None:
+        from copilot.services.agent import select_tools
+
+        base_state["intent"] = "classify"
+        base_state["user_message"] = "Scan customer_db and classify PII."
+
+        result = await select_tools(base_state)
+        proposals = result["tool_proposals"]
+
+        assert [proposal["name"] for proposal in proposals] == [
+            "search_metadata",
+            "get_entity_details",
+            "patch_entity",
+        ]
+        assert proposals[0]["arguments"]["queryFilter"] == "service:customer_db"
+        assert proposals[1]["arguments"]["entityFqn"] == "sample_mysql.default.customer_db.customers"
+        assert len(proposals[2]["arguments"]["patch"]) == 3
+        assert proposals[2]["arguments"]["approved_tags"] == [
+            "sample_mysql.default.customer_db.customers.email:PII.Sensitive",
+            "sample_mysql.default.customer_db.customers.phone:PII.Sensitive",
+            "sample_mysql.default.customer_db.customers.ssn:PII.Sensitive",
+        ]
+        mock_llm.assert_not_awaited()
+
 
 class TestValidateProposal:
     """Tests for the validate_proposal node."""

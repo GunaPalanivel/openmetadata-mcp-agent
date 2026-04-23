@@ -138,7 +138,7 @@ We'll link the final submission + demo video before the Apr 26 deadline.
 
 ### OMH-GSA (@GunaPalanivel)
 
-- [ ] `P2-01` **Auto-classification flow**: scan tables → GPT-4o-mini classifies columns → suggest PII tags → user confirms → `patch_entity` applies
+- [x] `P2-01` **Auto-classification flow**: classify intent enforces `search_metadata` → `get_entity_details` → `patch_entity` chain with HITL pending_confirmation and seed spot-check columns (`customers.email`, `customers.phone`, `customers.ssn`)
 - [ ] `P2-02` **Lineage impact analysis**: NL query → `get_entity_lineage` → GPT translates to human-readable report with Tier warnings
 - [ ] `P2-03` Multi-step agent logic: ensure agent can chain 3+ tool calls in one conversation turn
 - [x] `P2-04` FastAPI backend: `POST /api/v1/chat` wired to LangGraph agent ([`src/copilot/api/chat.py`](../../src/copilot/api/chat.py))

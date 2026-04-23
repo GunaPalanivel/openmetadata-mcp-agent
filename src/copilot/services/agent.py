@@ -220,6 +220,48 @@ Respond with ONLY a JSON object:
 }
 """
 
+_DEMO_SERVICE_FILTER = "service:customer_db"
+_DEMO_TABLE_FQN = "sample_mysql.default.customer_db.customers"
+_DEMO_PII_COLUMNS: tuple[str, str, str] = ("email", "phone", "ssn")
+
+
+def _auto_classification_proposals() -> list[dict[str, Any]]:
+    """Return deterministic classify chain for demo-critical P2-01 flow."""
+    return [
+        {
+            "name": "search_metadata",
+            "arguments": {
+                "query": "*",
+                "entityType": "table",
+                "queryFilter": _DEMO_SERVICE_FILTER,
+            },
+            "rationale": "Scan customer_db tables before classification.",
+        },
+        {
+            "name": "get_entity_details",
+            "arguments": {
+                "entityType": "table",
+                "entityFqn": _DEMO_TABLE_FQN,
+            },
+            "rationale": "Inspect target table columns before proposing tags.",
+        },
+        {
+            "name": "patch_entity",
+            "arguments": {
+                "entityType": "table",
+                "entityFqn": _DEMO_TABLE_FQN,
+                "approved_tags": [f"{_DEMO_TABLE_FQN}.{column}:PII.Sensitive" for column in _DEMO_PII_COLUMNS],
+                # Batch patch proposal for the three PII spot-check columns in seed/customer_db.json.
+                "patch": [
+                    {"op": "add", "path": "/columns/3/tags/-", "value": {"tagFQN": "PII.Sensitive"}},
+                    {"op": "add", "path": "/columns/4/tags/-", "value": {"tagFQN": "PII.Sensitive"}},
+                    {"op": "add", "path": "/columns/5/tags/-", "value": {"tagFQN": "PII.Sensitive"}},
+                ],
+            },
+            "rationale": "Propose batch PII tagging for email/phone/ssn via HITL gate.",
+        },
+    ]
+
 
 async def select_tools(state: AgentState) -> AgentState:
     """Node 2: Use LLM to select which MCP tools to call with what arguments.
@@ -231,6 +273,16 @@ async def select_tools(state: AgentState) -> AgentState:
         Updated state with ``tool_proposals`` list populated.
     """
     log.info("agent.select_tools.start", request_id=state["request_id"], intent=state["intent"])
+
+    if state.get("intent") == "classify":
+        proposals = _auto_classification_proposals()
+        state["tool_proposals"] = proposals
+        log.info(
+            "agent.select_tools.classify_chain",
+            tool_count=len(proposals),
+            tools=[p["name"] for p in proposals],
+        )
+        return state
 
     intent_hint = INTENT_DESCRIPTIONS.get(state["intent"] or "search", "")
 

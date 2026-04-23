@@ -19,7 +19,10 @@
 | 2    | If write flow: open confirmation modal (P2-12).                 | `proposal_id`, `risk_level: hard_write`, entity FQNs visible.               |
 | 3    | Click **Confirm**.                                              | `200` from `POST /api/v1/chat/confirm`; audit shows `patch_entity` success. |
 
-**Measurable:** ≥1 column tagged in OM UI on a named table (record FQN in rehearsal notes, e.g. `sample_mysql.default.customer_db.<table>`).
+**Measurable:** proposal (and post-confirm write-back) includes all 3 seed spot-check columns on `sample_mysql.default.customer_db.customers`:
+- `sample_mysql.default.customer_db.customers.email`
+- `sample_mysql.default.customer_db.customers.phone`
+- `sample_mysql.default.customer_db.customers.ssn`
 
 ## Scene 2 — Lineage impact (Tier story)
 
