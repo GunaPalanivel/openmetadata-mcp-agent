@@ -29,7 +29,7 @@ def _now_utc() -> datetime:
 class EntityGovernanceRecord(BaseModel):
     """In-memory governance row keyed by ``fqn`` in ``governance_store``."""
 
-    model_config = ConfigDict(frozen=False)
+    model_config = ConfigDict(frozen=True)
 
     fqn: str = Field(min_length=1, max_length=2048)
     state: GovernanceState = GovernanceState.UNKNOWN
