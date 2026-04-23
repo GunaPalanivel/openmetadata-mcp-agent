@@ -53,6 +53,7 @@ Authoritative paths are under the repo root (`openmetadata-mcp-agent/`); links b
 - **Local OM stack**: [`../../infrastructure/docker-compose.om.yml`](../../infrastructure/docker-compose.om.yml) — OpenMetadata **1.6.2** (`docker.getcollate.io/openmetadata/server:1.6.2`) + MySQL + Elasticsearch; agent compose is [`../../infrastructure/docker-compose.yml`](../../infrastructure/docker-compose.yml) (OM is a separate client dependency).
 - **Tests**: `pytest tests/unit` — includes MCP wrapper ([`../../tests/unit/test_om_mcp.py`](../../tests/unit/test_om_mcp.py)), seed loader ([`../../tests/unit/test_load_seed.py`](../../tests/unit/test_load_seed.py)), settings / runtime guard ([`../../tests/unit/test_settings.py`](../../tests/unit/test_settings.py)), smoke script ([`../../tests/unit/test_smoke_script.py`](../../tests/unit/test_smoke_script.py)).
 - **UI (P1-14 / [\#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27))**: [`../../ui/`](../../ui/) Vite + React 18; **[`../../ui/README.md`](../../ui/README.md)** — runbook (`npm ci`, `npm run dev`, `http://localhost:3000`, console checklist). Committed **[`../../ui/package-lock.json`](../../ui/package-lock.json)** (repro installs; **`make install_ui`** and CI **`ui-build`** use **`npm ci`**). **[`../../ui/public/favicon.svg`](../../ui/public/favicon.svg)** satisfies `index.html` `/favicon.svg`. **`@types/react-dom`** pinned to ^18.3.0 in [`../../ui/package.json`](../../ui/package.json). Delivery PR: [\#73](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/73) (open until merged to `main`).
+- **Plan docs (2026-04-23)**: [`./FeatureDev/GovernanceEngine.md`](./FeatureDev/GovernanceEngine.md), [`./Demo/Narrative.md`](./Demo/Narrative.md), [`./Demo/CompetitiveMatrix.md`](./Demo/CompetitiveMatrix.md), [`./Demo/FailureRecovery.md`](./Demo/FailureRecovery.md), [`./Project/JudgePersona.md`](./Project/JudgePersona.md) — tracked under `.idea/Plan/`; `.gitignore` + CI path-guard updated so these paths can ship.
 
 ---
 
@@ -124,13 +125,13 @@ Authoritative paths are under the repo root (`openmetadata-mcp-agent/`); links b
 
 ### @aravindsai003
 
-| Task ID | Description                                                    | Issue                                                                    | PR  | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
-| ------- | -------------------------------------------------------------- | ------------------------------------------------------------------------ | --- | --- | --- | --- | --- | --- | --------- | --- | --- |
-| P1-11   | Local OM at `:8585` via `infrastructure/docker-compose.om.yml` | [#24](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/24) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
-| P1-12   | Generate Bot JWT, share privately                              | [#25](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/25) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
-| P1-13   | Pre-seed OM with 50+ realistic tables                          | [#26](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/26) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| Task ID | Description                                                    | Issue                                                                    | PR                                                                     | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | -------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P1-11   | Local OM at `:8585` via `infrastructure/docker-compose.om.yml` | [#24](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/24) |                                                                        | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-12   | Generate Bot JWT, share privately                              | [#25](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/25) |                                                                        | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-13   | Pre-seed OM with 50+ realistic tables                          | [#26](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/26) |                                                                        | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
 | P1-14   | Confirm UI scaffold runs on `:3000`                            | [#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27) | [#73](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/73) | [x] | [x] | [x] | [x] | [x] | [x]       | [ ] | [ ] |
-| P1-15   | Document setup in `README.md` (clone to run in 5 min)          | [#28](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/28) |     | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
+| P1-15   | Document setup in `README.md` (clone to run in 5 min)          | [#28](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/28) |                                                                        | [x] | [x] | [x] | [x] | [x] | [ ]       | [ ] | [ ] |
 
 ### @5009226-bhawikakumari
 
@@ -159,6 +160,7 @@ Authoritative paths are under the repo root (`openmetadata-mcp-agent/`); links b
 1. P2-08 (PSTL: error envelope + retry/breaker on every MCP call) — foundation for the rest.
 2. P2-11b (PSTL: redact + error envelope middleware).
 3. P2-13b (ATL: load `seed/customer_db.json` with 50+ tables and 2 prompt-injection planted).
+   3b. **P2-19 → P2-24** (governance spine: sessions + confirm, FSM, OM write-back, drift) before treating P2-01 HITL as done — merge order in [FeatureDev/GovernanceEngine.md](./FeatureDev/GovernanceEngine.md).
 4. P2-01 (GSA: auto-classification flow).
 5. P2-02 (GSA: lineage impact analysis).
 6. P2-03 (GSA: 3+ tool-call chaining in one turn).
@@ -210,6 +212,19 @@ Authoritative paths are under the repo root (`openmetadata-mcp-agent/`); links b
 | P2-16   | Refresh `Demo/Narrative.md` with measurable outcomes  | #\_\_    | #\_\_    | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 | P2-17   | Document all 12 MCP tools used in README (cite audit) | #\_\_    | #\_\_    | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 | P2-18   | Daily refresh `Demo/CompetitiveMatrix.md`             | #\_\_    | n/a      | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+
+### Phase 2b — Governance engine ([GovernanceEngine.md](./FeatureDev/GovernanceEngine.md))
+
+| Task ID | Description                                                            | Issue | PR    | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
+| ------- | ---------------------------------------------------------------------- | ----- | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
+| P2-19   | Session proposals + wire `/chat/confirm` + `/chat/cancel` via services | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-20   | `GovernanceState` + `governance_store`                                 | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-21   | Agent hooks: validate / hitl / confirm → store transitions             | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-22   | OM write-back (`patch_entity` custom properties)                       | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-23   | `drift.py` signals                                                     | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-24   | Lifespan drift poll + `GET /api/v1/governance/drift`                   | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-25   | `similarity.py` + format_response context                              | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-26   | Causal impact + `evidence_gap`                                         | #\_\_ | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 
 ### Phase 2 Exit Gate
 

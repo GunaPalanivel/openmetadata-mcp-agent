@@ -1,11 +1,29 @@
 # TaskSync — Master Task Tracker
 
-> **Last updated**: April 23, 2026 — aligned with repo + [Progress.md](./Progress.md) **Codebase snapshot — 2026-04-23** > **LLM Provider**: ✅ OpenAI GPT-4o-mini (free Codex credits)
+> **Last updated**: April 23, 2026 — aligned with repo + [Progress.md](./Progress.md); **Phase 2b** governance tasks; **§Sixteen-issue engineering program** + [EngineeringIssueTemplate.md](./PR-Review/EngineeringIssueTemplate.md). **Codebase snapshot — 2026-04-23** > **LLM Provider**: ✅ OpenAI GPT-4o-mini (free Codex credits)
 > **Repo Strategy**: ✅ NEW standalone repo (`openmetadata-mcp-agent`) + fork for GFI only
 > **Plan/ location**: ✅ `.idea/Plan/` stays local (agent command center)
 > **All tasks ordered by priority. Check off as you complete them.**
 
 **Quick pointers (code today):** Run the agent with `uvicorn copilot.api.main:app` (not root `main.py`). MCP: `src/copilot/clients/om_mcp.py` + env **`OM_MCP_HTTP_PATH`** (default `/mcp`). Seed: `scripts/load_seed.py` + `python-dotenv` + `dataLength` for OM 1.6; search index: `scripts/trigger_om_search_reindex.py`; `make demo-fresh` chains reindex after load. UI: [`ui/README.md`](../../ui/README.md) — **`npm ci`** / **`npm run dev`** on **`http://localhost:3000`** (Vite `127.0.0.1:3000`); committed **`ui/package-lock.json`**, **`ui/public/favicon.svg`**, CI **`ui-build`** uses **`npm ci`**; P1-14 / [#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27) — PR [\#73](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/73) (merge when green).
+
+---
+
+## Sixteen-issue engineering program (docs excluded)
+
+> **Rule**: Exactly **16 closed GitHub issues** in `GunaPalanivel/openmetadata-mcp-agent` = engineering complete for the hackathon product bar. **README, submission form, narrative polish, and video script** are **not** in the 16 — they stay in Phase 3–4 tasks below.
+
+| Wave   | Window       | Close (GitHub) | Exit                                                                                           |
+| ------ | ------------ | ---------------- | ---------------------------------------------------------------------------------------------- |
+| **W1** | Now → Apr 24 | [#75](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/75)–[#79](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/79) + start [#80](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/80) | HITL spine: P2-19…P2-24 per [FeatureDev/GovernanceEngine.md](./FeatureDev/GovernanceEngine.md) |
+| **W2** | Apr 24–25    | [#80](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/80)–[#85](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/85) | Auto-classify, lineage, NL query, UI + HITL modal, OM-native UI                                |
+| **W3** | Apr 25–26    | [#86](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/86)–[#90](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/90) | Multi-MCP, integration/security/coverage, CI gaps, demo automation, **E2E Playwright**         |
+
+**Issue index**: [SPRINT16_GITHUB_ISSUES.md](./SPRINT16_GITHUB_ISSUES.md) · [SPRINT16_GITHUB_ISSUES.json](./SPRINT16_GITHUB_ISSUES.json) · Creator script: not committed in this repo; use the issue index files above as the canonical source.
+
+**Issue bodies**: Mandatory template — [PR-Review/EngineeringIssueTemplate.md](./PR-Review/EngineeringIssueTemplate.md) (Context, What to do, Done when, Depends on, Unblocks, Acceptance criteria with PRD + APIContract + tests, References).
+
+**Superseded**: GOV [#60](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/60)–[#66](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/66) and legacy Phase-1 open batch — closed with pointer to **#75–#90** (see this PR).
 
 ---
 
@@ -150,6 +168,19 @@ We'll link the final submission + demo video before the Apr 26 deadline.
 - [ ] `P2-16` Refresh demo script ([Demo/Narrative.md](./Demo/Narrative.md)) with measurable outcomes from [Project/PRD.md](./Project/PRD.md)
 - [ ] `P2-17` Document all 12 MCP tools used in README; cite [DataFindings/ExistingMCPAudit.md §AI SDK Coverage](./DataFindings/ExistingMCPAudit.md) for the 7-typed/5-string-callable split
 - [ ] `P2-18` Daily refresh of [Demo/CompetitiveMatrix.md](./Demo/CompetitiveMatrix.md)
+
+### Phase 2b — Governance engine (catalog-backed lifecycle)
+
+> **Spec**: [FeatureDev/GovernanceEngine.md](./FeatureDev/GovernanceEngine.md) — canonical backlog. Informal `P0`–`P6` labels in [Task.md](../../Task.md) are **deprecated for execution**; use the task IDs below. **Merge order** and **16-issue GitHub budget** are in the spec.
+
+- [ ] `P2-19` Session-scoped pending proposals + wire `POST /api/v1/chat/confirm` and `POST /api/v1/chat/cancel` through **services** (replace stubs in [`src/copilot/api/chat.py`](../../src/copilot/api/chat.py))
+- [ ] `P2-20` `GovernanceState` + `governance_store` (`transition`, `get_or_create`, in-memory by FQN)
+- [ ] `P2-21` Integrate store into LangGraph: `validate_proposal` / `hitl_gate` / confirm path (state transitions)
+- [ ] `P2-22` OM write-back: async `patch_entity` custom properties on key transitions (`APPROVED`, `DRIFT_DETECTED`)
+- [ ] `P2-23` `drift.py`: lineage hash + tag diff signals vs live OM
+- [ ] `P2-24` FastAPI lifespan drift poll + **`GET /api/v1/governance/drift`** ([planned contract](./Architecture/APIContract.md))
+- [ ] `P2-25` `similarity.py` + optional opinionated context in `format_response`
+- [ ] `P2-26` Causal impact block + `evidence_gap` on `AgentState` / `format_response` (timebox if needed)
 
 ### Phase 2 Exit Gate
 
