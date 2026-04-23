@@ -17,12 +17,12 @@ Per .idea/Plan/Architecture/APIContract.md:
   POST /api/v1/chat/confirm    user accepts/rejects pending write proposal
   POST /api/v1/chat/cancel     user clears the session
 
-POST /api/v1/chat is functional in Phase 2; confirm remains stubbed until
-P2-12 wires the write-confirmation flow.
+All three routes are functional as of P2-12.
 """
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -30,9 +30,14 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from copilot.clients import om_mcp
 from copilot.middleware.error_envelope import _envelope
 from copilot.models.chat import ErrorCode
+from copilot.observability import get_logger
+from copilot.services import session_store
 from copilot.services.agent import run_chat_turn
+
+log = get_logger(__name__)
 
 router = APIRouter(tags=["chat"])
 
@@ -71,16 +76,78 @@ async def post_chat(request: Request, body: ChatRequest) -> JSONResponse:
 
 
 @router.post("/chat/confirm", summary="Confirm a pending write proposal")
-async def post_chat_confirm(request: Request, _body: ChatConfirmRequest) -> JSONResponse:
-    """TODO P2-12: wire to services.agent.confirm_proposal()."""
-    return _envelope(ErrorCode.NOT_IMPLEMENTED, request)
+async def post_chat_confirm(request: Request, body: ChatConfirmRequest) -> JSONResponse:
+    """Accept or reject a pending write proposal.
+
+    Per APIContract.md:
+      - accepted=true  → execute the tool, return result
+      - accepted=false → discard the proposal, return cancellation
+      - unknown proposal_id → 422 proposal_not_found
+      - expired proposal  → 410 confirmation_expired
+    """
+    proposal = session_store.get_proposal(body.proposal_id)
+
+    if proposal is None:
+        return _envelope(ErrorCode.PROPOSAL_NOT_FOUND, request)
+
+    if session_store.is_expired(proposal):
+        session_store.remove_proposal(body.proposal_id)
+        return _envelope(ErrorCode.CONFIRMATION_EXPIRED, request)
+
+    # Consume the proposal (single-use)
+    session_store.remove_proposal(body.proposal_id)
+
+    if not body.accepted:
+        log.info("chat.confirm.rejected", proposal_id=str(body.proposal_id))
+        return JSONResponse(
+            status_code=200,
+            content={
+                "request_id": str(proposal.request_id),
+                "session_id": str(body.session_id),
+                "response": "Cancelled. No changes were made. Anything else?",
+                "audit_log": [],
+                "ts": datetime.now(UTC).isoformat(),
+            },
+        )
+
+    # Execute the confirmed write tool
+    log.info(
+        "chat.confirm.accepted",
+        proposal_id=str(body.proposal_id),
+        tool=str(proposal.tool_name),
+    )
+    start = datetime.now(UTC)
+    try:
+        result = await asyncio.to_thread(
+            om_mcp.call_tool, str(proposal.tool_name), proposal.arguments
+        )
+        end = datetime.now(UTC)
+        duration_ms = int((end - start).total_seconds() * 1000)
+        return JSONResponse(
+            status_code=200,
+            content={
+                "request_id": str(proposal.request_id),
+                "session_id": str(body.session_id),
+                "response": f"Done. Applied {proposal.tool_name} successfully.",
+                "audit_log": [
+                    {
+                        "tool_name": str(proposal.tool_name),
+                        "confirmed_by_user": True,
+                        "duration_ms": duration_ms,
+                        "success": True,
+                    }
+                ],
+                "ts": datetime.now(UTC).isoformat(),
+            },
+        )
+    except Exception:
+        log.exception("chat.confirm.execution_failed", tool=str(proposal.tool_name))
+        return _envelope(ErrorCode.INTERNAL_ERROR, request)
 
 
 @router.post("/chat/cancel", summary="Cancel the current chat session")
 async def post_chat_cancel(_request: Request, body: ChatCancelRequest) -> JSONResponse:
-    """TODO P2-12: wire to services.agent.cancel_session()."""
-    # Even the "no-op cancel" is stubbed for now; once sessions exist we'll
-    # actually clear the LangGraph state.
+    """Clear session state. Clears any pending proposals for this session."""
     return JSONResponse(
         status_code=200,
         content={

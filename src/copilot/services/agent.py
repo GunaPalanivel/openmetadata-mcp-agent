@@ -50,6 +50,7 @@ from copilot.middleware.error_envelope import (
     ToolNotAllowlisted,
 )
 from copilot.models import RiskLevel, ToolCallProposal, ToolCallRecord, ToolName
+from copilot.services import session_store
 from copilot.models.chat import risk_level_for
 from copilot.observability import get_logger
 
@@ -389,6 +390,7 @@ async def hitl_gate(state: AgentState) -> AgentState:
         # Return the first write proposal as pending_confirmation
         pending = write_proposals[0]
         state["pending_confirmation"] = pending.model_dump(mode="json")
+        session_store.store_proposal(pending)
         log.info(
             "agent.hitl_gate.confirmation_required",
             tool=str(pending.tool_name),
