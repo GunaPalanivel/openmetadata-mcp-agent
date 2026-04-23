@@ -47,9 +47,11 @@ flowchart TD
 
 **`POST /api/v1/chat/confirm`** (Phase 2b, [GovernanceEngine.md](../FeatureDev/GovernanceEngine.md)) executes the deferred write and should transition governance state — it is **not** another LangGraph node in v1; it is a separate HTTP entrypoint that mutates session + MCP.
 
-## Governance FSM hooks (target — P2-20+)
+## Governance FSM hooks
 
-When the governance store lands, associate transitions with nodes:
+**P2-20 (#76):** In-memory `governance_store` + FSM types are implemented (`get_or_create`, `transition`). **P2-21 (#77):** Wire LangGraph nodes and `POST /chat/confirm` to call `transition` as below.
+
+When hooks land, associate transitions with nodes:
 
 ```mermaid
 stateDiagram-v2
