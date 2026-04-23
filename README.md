@@ -13,6 +13,7 @@
 </p>
 
 > **OpenMetadata's mission is to take the chaos out of the data practitioner's life.** Today most of that chaos is the _governance loop_: scan, classify, confirm, apply, notify. We turned that loop into one chat sentence — with a human-in-the-loop safety gate, prompt-injection defense, and observability built in.
+> Built with OpenAI GPT-4o-mini, orchestrated by LangGraph, connecting to OpenMetadata via the official data-ai-sdk.
 
 <p align="center">
   <em>(Hero GIF lands here in Phase 3 — 8s loop showing: type query → agent reasons → confirmation modal → tags applied)</em>
