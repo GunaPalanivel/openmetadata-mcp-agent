@@ -217,7 +217,7 @@ Authoritative paths are under the repo root (`openmetadata-mcp-agent/`); links b
 
 | Task ID | Description                                                            | Issue                                                                    | PR    | P   | B   | V1  | F   | V2  | PR opened | R   | M   |
 | ------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------ | ----- | --- | --- | --- | --- | --- | --------- | --- | --- |
-| P2-19   | Session proposals + wire `/chat/confirm` + `/chat/cancel` via services | [#75](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/75) | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
+| P2-19   | Session proposals + wire `/chat/confirm` + `/chat/cancel` via services | [#75](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/75) | [#93](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/93) | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 | P2-20   | `GovernanceState` + `governance_store`                                 | #\_\_                                                                    | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 | P2-21   | Agent hooks: validate / hitl / confirm → store transitions             | #\_\_                                                                    | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
 | P2-22   | OM write-back (`patch_entity` custom properties)                       | #\_\_                                                                    | #\_\_ | [ ] | [ ] | [ ] | [ ] | [ ] | [ ]       | [ ] | [ ] |
