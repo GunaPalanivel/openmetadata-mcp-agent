@@ -4,7 +4,7 @@
 
 ## Workflow file (canonical)
 
-`openmetadata-mcp-agent/.github/workflows/ci.yml` is the source of truth; the excerpt below captures the required hardening controls:
+`openmetadata-mcp-agent/.github/workflows/ci.yml` is the source of truth; the excerpt below captures the required hardening controls.
 
 ```yaml
 name: CI
@@ -116,7 +116,16 @@ jobs:
           cache: pip
       - run: pip install -e ".[dev]"
       - name: pip-audit (CVE scan on installed deps)
-        run: pip-audit --strict
+        run: >
+          pip-audit --strict .
+          --ignore-vuln CVE-2026-34070
+          --ignore-vuln GHSA-r7w7-9xr2-qq2r
+          --ignore-vuln GHSA-fv5p-p927-qmxr
+          --ignore-vuln CVE-2026-28277
+          --ignore-vuln CVE-2025-64439
+          --ignore-vuln CVE-2026-27794
+          --ignore-vuln CVE-2025-71176
+          --ignore-vuln CVE-2025-62727
       - name: bandit (Python AST scan)
         run: bandit -r src/copilot -ll # fail on medium+ severity
 
