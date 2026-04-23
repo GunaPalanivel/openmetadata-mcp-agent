@@ -53,7 +53,7 @@ This project advances both. See [Project/VisionAlignment.md](./Project/VisionAli
 ## 📁 Folder Map
 
 ```
-.idea/Plan/ (LOCAL — agent command center, gitignored)
+.idea/Plan/ (published — engineering plan hub; committed via !.idea/Plan/ in .gitignore)
 ├── README.md                      ← THIS FILE
 ├── TaskSync.md                    ← Master task list (ordered, per-person)
 ├── Project/                       ← PRD, ADRs, Discovery, NFRs, Vision, Judges, Risks, Runbook, TechStack

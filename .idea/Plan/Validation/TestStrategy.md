@@ -56,7 +56,7 @@ pytest tests/integration/ -v
 pytest tests/e2e/ -v
 
 # Full suite
-pytest --cov=copilot --cov-report=html
+pytest --cov=src/copilot --cov-report=html
 ```
 
 ## Acceptance Criteria (per phase)
