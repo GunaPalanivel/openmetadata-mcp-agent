@@ -61,6 +61,12 @@ interface ChatMessage {
   pending?: PendingConfirmation;
 }
 
+interface DriftSummaryPayload {
+  drift_count: number;
+  entity_count: number;
+  scanned_at: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Risk badge
 // ---------------------------------------------------------------------------
@@ -220,11 +226,41 @@ export function App(): JSX.Element {
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [driftSummary, setDriftSummary] = useState<DriftSummaryPayload | null>(null);
+  const [driftError, setDriftError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const loadDriftSummary = useCallback(async () => {
+    setDriftError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/governance/drift`);
+      if (!res.ok) {
+        let msg = `Request failed (${res.status})`;
+        try {
+          const envelope = (await res.json()) as ErrorEnvelope;
+          msg = `${envelope.code}: ${envelope.message}`;
+        } catch {
+          /* ignore parse errors */
+        }
+        setDriftSummary(null);
+        setDriftError(msg);
+        return;
+      }
+      const data = (await res.json()) as DriftSummaryPayload;
+      setDriftSummary(data);
+    } catch (e) {
+      setDriftSummary(null);
+      setDriftError(e instanceof Error ? e.message : 'Unknown error');
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadDriftSummary();
+  }, [loadDriftSummary]);
 
   async function checkHealth(): Promise<void> {
     setHealthError(null);
@@ -239,6 +275,7 @@ export function App(): JSX.Element {
       setHealthError(e instanceof Error ? e.message : 'Unknown error');
       setHealthStatus(null);
     }
+    void loadDriftSummary();
   }
 
   const sendMessage = useCallback(async () => {
@@ -311,6 +348,22 @@ export function App(): JSX.Element {
     setMessages((prev) => [...prev, { role: 'assistant', content: response.response ?? '' }]);
   }, []);
 
+  const driftCount = driftSummary?.drift_count ?? null;
+  const driftStatusLabel =
+    driftError !== null
+      ? 'Unavailable'
+      : driftSummary === null
+        ? '…'
+        : driftCount === 0
+          ? 'No drift'
+          : 'Review needed';
+  const driftStatusClass =
+    driftError !== null
+      ? 'app__card-value--error'
+      : driftCount !== null && driftCount > 0
+        ? 'app__card-value--warning'
+        : 'app__card-value--good';
+
   return (
     <div className="app">
       <header className="app__header">
@@ -319,73 +372,115 @@ export function App(): JSX.Element {
       </header>
 
       <main className="app__main">
-        <section className="app__status">
-          <button type="button" onClick={() => void checkHealth()}>
-            Check backend health
-          </button>
-          {healthStatus !== null && (
-            <pre className="app__status-output">
-              status: {healthStatus.status}
-              {'\n'}version: {healthStatus.version}
-              {'\n'}ts: {healthStatus.ts}
-            </pre>
-          )}
-          {healthError !== null && (
-            <p className="app__status-error">Backend not reachable: {healthError}</p>
-          )}
-        </section>
-
-        <section className="app__chat">
-          <div className="chat__messages" id="chat-messages">
-            {messages.length === 0 && (
-              <p className="chat__empty">Ask a question about your OpenMetadata catalog…</p>
+        <aside className="app__sidebar">
+          <div className="app__card">
+            <h3 className="app__card-title">Drift status</h3>
+            <p className={`app__card-value ${driftStatusClass}`}>{driftStatusLabel}</p>
+            {driftError !== null && (
+              <p className="app__sidebar-note">{driftError}</p>
             )}
-            {messages.map((msg, i) => (
-              <div key={i} className={`chat__bubble chat__bubble--${msg.role}`}>
-                <span className="chat__role">{msg.role === 'user' ? 'You' : 'Agent'}</span>
-                <div className="chat__content">{msg.content}</div>
-                {msg.pending && (
-                  <div className="chat__pending-hint">
-                    ⚠️ Write operation pending — see confirmation dialog above.
-                  </div>
-                )}
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
+          </div>
+          <div className="app__card">
+            <h3 className="app__card-title">Drift findings</h3>
+            <p className="app__card-value">
+              {driftSummary !== null
+                ? String(driftSummary.drift_count)
+                : driftError !== null
+                  ? '—'
+                  : '…'}
+            </p>
+          </div>
+          <div className="app__card">
+            <h3 className="app__card-title">Entities scanned</h3>
+            <p className="app__card-value">
+              {driftSummary !== null
+                ? String(driftSummary.entity_count)
+                : driftError !== null
+                  ? '—'
+                  : '…'}
+            </p>
+          </div>
+          <div className="app__card">
+            <h3 className="app__card-title">Last drift scan</h3>
+            <p className="app__card-value app__card-value--compact">
+              {driftSummary?.scanned_at
+                ? new Date(driftSummary.scanned_at).toLocaleString()
+                : driftError !== null
+                  ? '—'
+                  : '…'}
+            </p>
           </div>
 
-          <div className="chat__input-row">
-            <textarea
-              id="chat-input"
-              className="app__chat-input"
-              placeholder="Type a query…"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  void sendMessage();
-                }
-              }}
-              rows={2}
-            />
-            <button
-              id="chat-send-btn"
-              type="button"
-              className="app__chat-send"
-              disabled={sending || !input.trim()}
-              onClick={() => void sendMessage()}
-            >
-              {sending ? 'Sending…' : 'Send'}
+          <section className="app__status">
+            <button type="button" onClick={() => void checkHealth()}>
+              Check backend health
             </button>
-          </div>
-          {chatError !== null && <p className="app__chat-error">{chatError}</p>}
-          {sessionId !== null && (
-            <p className="app__chat-session" data-testid="session-id">
-              session_id: {sessionId}
-            </p>
-          )}
-        </section>
+            {healthStatus !== null && (
+              <pre className="app__status-output">
+                status: {healthStatus.status}
+                {'\n'}version: {healthStatus.version}
+                {'\n'}ts: {healthStatus.ts}
+              </pre>
+            )}
+            {healthError !== null && (
+              <p className="app__status-error">Backend not reachable: {healthError}</p>
+            )}
+          </section>
+        </aside>
+
+        <div className="app__chat-container">
+          <section className="app__chat">
+            <div className="chat__messages" id="chat-messages">
+              {messages.length === 0 && (
+                <p className="chat__empty">Ask a question about your OpenMetadata catalog…</p>
+              )}
+              {messages.map((msg, i) => (
+                <div key={i} className={`chat__bubble chat__bubble--${msg.role}`}>
+                  <span className="chat__role">{msg.role === 'user' ? 'You' : 'Agent'}</span>
+                  <div className="chat__content">{msg.content}</div>
+                  {msg.pending && (
+                    <div className="chat__pending-hint">
+                      ⚠️ Write operation pending — see confirmation dialog above.
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="chat__input-row">
+              <textarea
+                id="chat-input"
+                className="app__chat-input"
+                placeholder="Type a query…"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    void sendMessage();
+                  }
+                }}
+                rows={2}
+              />
+              <button
+                id="chat-send-btn"
+                type="button"
+                className="app__chat-send"
+                disabled={sending || !input.trim()}
+                onClick={() => void sendMessage()}
+              >
+                {sending ? 'Sending…' : 'Send'}
+              </button>
+            </div>
+            {chatError !== null && <p className="app__chat-error">{chatError}</p>}
+            {sessionId !== null && (
+              <p className="app__chat-session" data-testid="session-id">
+                session_id: {sessionId}
+              </p>
+            )}
+          </section>
+        </div>
       </main>
 
       {pendingConfirmation !== null && sessionId !== null && (
