@@ -27,6 +27,8 @@ Usage:
 
 ``AI_SDK_TOKEN`` is read from the process environment or from the repo root
 ``.env`` (loaded automatically via ``python-dotenv``).
+Search reindex is intentionally handled by ``scripts/trigger_om_search_reindex.py``
+or ``make demo-fresh`` after this loader completes.
 """
 
 from __future__ import annotations
