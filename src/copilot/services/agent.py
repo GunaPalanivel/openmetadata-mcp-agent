@@ -466,6 +466,7 @@ async def hitl_gate(state: AgentState) -> AgentState:
         pending = write_proposals[0]
         state["pending_confirmation"] = pending.model_dump(mode="json")
         await _mark_suggested_if_possible(pending)
+        await set_pending(UUID(state["session_id"]), pending)
         log.info(
             "agent.hitl_gate.confirmation_required",
             tool=str(pending.tool_name),
