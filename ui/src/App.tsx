@@ -7,9 +7,40 @@
  *  http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { useState } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 const API_URL = import.meta.env['VITE_API_URL'] ?? 'http://localhost:8000';
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface AuditEntry {
+  tool_name: string;
+  duration_ms?: number | null;
+  success?: boolean;
+  confirmed_by_user?: boolean;
+}
+
+interface PendingConfirmation {
+  proposal_id: string;
+  tool_name: string;
+  risk_level: 'read' | 'soft_write' | 'hard_write';
+  rationale: string;
+  arguments: Record<string, unknown>;
+  expires_at: string | null;
+}
+
+interface ChatResponse {
+  request_id: string;
+  session_id: string;
+  response: string;
+  response_format?: string;
+  pending_confirmation?: PendingConfirmation;
+  audit_log?: AuditEntry[];
+  tokens_used?: { prompt: number; completion: number };
+  ts: string;
+}
 
 interface HealthStatus {
   status: string;
@@ -24,30 +55,212 @@ interface ErrorEnvelope {
   ts: string;
 }
 
-interface PendingConfirmation {
-  summary?: string;
-}
-
-interface ChatResponse {
-  request_id: string;
-  session_id: string;
-  response: string;
-  pending_confirmation?: PendingConfirmation;
-}
-
-interface ChatEntry {
+interface ChatMessage {
   role: 'user' | 'assistant';
-  text: string;
+  content: string;
+  pending?: PendingConfirmation;
 }
+
+interface DriftSummaryPayload {
+  drift_count: number;
+  entity_count: number;
+  scanned_at: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Risk badge
+// ---------------------------------------------------------------------------
+
+function RiskBadge({ level }: { level: string }): JSX.Element {
+  const cls =
+    level === 'hard_write'
+      ? 'risk-badge risk-badge--hard'
+      : level === 'soft_write'
+        ? 'risk-badge risk-badge--soft'
+        : 'risk-badge risk-badge--read';
+  const label =
+    level === 'hard_write' ? 'HIGH RISK' : level === 'soft_write' ? 'MEDIUM' : 'READ';
+  return <span className={cls}>{label}</span>;
+}
+
+// ---------------------------------------------------------------------------
+// Confirmation modal
+// ---------------------------------------------------------------------------
+
+function ConfirmationModal({
+  pending,
+  sessionId,
+  onResolved,
+}: {
+  pending: PendingConfirmation;
+  sessionId: string;
+  onResolved: (response: ChatResponse) => void;
+}): JSX.Element {
+  const [loading, setLoading] = useState(false);
+
+  async function handleDecision(accepted: boolean): Promise<void> {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/chat/confirm`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          proposal_id: pending.proposal_id,
+          accepted,
+        }),
+      });
+      const data = (await res.json()) as ChatResponse & Partial<ErrorEnvelope>;
+      if (!res.ok) {
+        onResolved({
+          request_id: data.request_id ?? '',
+          session_id: sessionId,
+          response: `${data.code ?? 'error'}: ${data.message ?? res.statusText}`,
+          ts: new Date().toISOString(),
+        });
+        return;
+      }
+      onResolved(data as ChatResponse);
+    } catch {
+      onResolved({
+        request_id: '',
+        session_id: sessionId,
+        response: 'Failed to reach backend. Please try again.',
+        ts: new Date().toISOString(),
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const argEntries = Object.entries(pending.arguments ?? {}).map(([k, v]) => {
+    const val = typeof v === 'string' && v.length > 80 ? v.slice(0, 80) + '…' : String(v);
+    return { key: k, value: val };
+  });
+
+  return (
+    <div className="modal-overlay" id="hitl-modal-overlay">
+      <div className="modal" id="hitl-confirmation-modal">
+        <div className="modal__header">
+          <h2>⚠️ Confirmation Required</h2>
+          <RiskBadge level={pending.risk_level} />
+        </div>
+
+        <div className="modal__body">
+          <div className="modal__field">
+            <span className="modal__label">Proposal ID</span>
+            <code className="modal__value">{pending.proposal_id}</code>
+          </div>
+
+          <div className="modal__field">
+            <span className="modal__label">Tool</span>
+            <code className="modal__value">{pending.tool_name}</code>
+          </div>
+
+          {pending.rationale && (
+            <div className="modal__field">
+              <span className="modal__label">Rationale</span>
+              <span className="modal__value">{pending.rationale}</span>
+            </div>
+          )}
+
+          {argEntries.length > 0 && (
+            <div className="modal__field">
+              <span className="modal__label">Arguments</span>
+              <div className="modal__args">
+                {argEntries.map((a) => (
+                  <div key={a.key} className="modal__arg-row">
+                    <code>{a.key}</code>: <span>{a.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {pending.expires_at && (
+            <div className="modal__field">
+              <span className="modal__label">Expires</span>
+              <span className="modal__value">
+                {new Date(pending.expires_at).toLocaleTimeString()}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="modal__actions">
+          <button
+            id="hitl-confirm-btn"
+            type="button"
+            className="btn btn--confirm"
+            disabled={loading}
+            onClick={() => void handleDecision(true)}
+          >
+            {loading ? 'Applying…' : '✓ Confirm'}
+          </button>
+          <button
+            id="hitl-cancel-btn"
+            type="button"
+            className="btn btn--cancel"
+            disabled={loading}
+            onClick={() => void handleDecision(false)}
+          >
+            ✗ Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// App
+// ---------------------------------------------------------------------------
 
 export function App(): JSX.Element {
-  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [pendingConfirmation, setPendingConfirmation] =
+    useState<PendingConfirmation | null>(null);
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
-  const [chatEntries, setChatEntries] = useState<ChatEntry[]>([]);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [isSending, setIsSending] = useState(false);
+  const [driftSummary, setDriftSummary] = useState<DriftSummaryPayload | null>(null);
+  const [driftError, setDriftError] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const loadDriftSummary = useCallback(async () => {
+    setDriftError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/governance/drift`);
+      if (!res.ok) {
+        let msg = `Request failed (${res.status})`;
+        try {
+          const envelope = (await res.json()) as ErrorEnvelope;
+          msg = `${envelope.code}: ${envelope.message}`;
+        } catch {
+          /* ignore parse errors */
+        }
+        setDriftSummary(null);
+        setDriftError(msg);
+        return;
+      }
+      const data = (await res.json()) as DriftSummaryPayload;
+      setDriftSummary(data);
+    } catch (e) {
+      setDriftSummary(null);
+      setDriftError(e instanceof Error ? e.message : 'Unknown error');
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadDriftSummary();
+  }, [loadDriftSummary]);
 
   async function checkHealth(): Promise<void> {
     setHealthError(null);
@@ -62,63 +275,94 @@ export function App(): JSX.Element {
       setHealthError(e instanceof Error ? e.message : 'Unknown error');
       setHealthStatus(null);
     }
+    void loadDriftSummary();
   }
 
-  async function sendMessage(): Promise<void> {
-    const trimmedMessage = message.trim();
-    if (!trimmedMessage || isSending) {
-      return;
-    }
+  const sendMessage = useCallback(async () => {
+    const text = input.trim();
+    if (!text || sending) return;
 
-    setIsSending(true);
+    setSending(true);
     setChatError(null);
-    setChatEntries((previous) => [...previous, { role: 'user', text: trimmedMessage }]);
-    setMessage('');
+    setMessages((prev) => [...prev, { role: 'user', content: text }]);
+    setInput('');
 
     try {
-      const payload: { message: string; session_id?: string } = { message: trimmedMessage };
-      if (sessionId) {
-        payload.session_id = sessionId;
-      }
-
-      const response = await fetch(`${API_URL}/api/v1/chat`, {
+      const res = await fetch(`${API_URL}/api/v1/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          message: text,
+          ...(sessionId ? { session_id: sessionId } : {}),
+        }),
       });
 
-      if (!response.ok) {
-        let envelope: ErrorEnvelope | null = null;
+      if (!res.ok) {
+        let errText = `Request failed (${res.status})`;
         try {
-          envelope = (await response.json()) as ErrorEnvelope;
+          const envelope = (await res.json()) as ErrorEnvelope;
+          errText = `${envelope.code}: ${envelope.message}`;
         } catch {
-          envelope = null;
+          /* ignore parse errors */
         }
-
-        if (envelope) {
-          setChatError(`${envelope.code}: ${envelope.message}`);
-        } else {
-          setChatError(`Request failed with status ${response.status}`);
-        }
+        setChatError(errText);
+        setMessages((prev) => [
+          ...prev,
+          { role: 'assistant', content: `Could not complete request: ${errText}` },
+        ]);
         return;
       }
 
-      const data = (await response.json()) as ChatResponse;
+      const data = (await res.json()) as ChatResponse;
       setSessionId(data.session_id);
-      const assistantText =
-        data.pending_confirmation?.summary !== undefined
-          ? `${data.response}\n\nPending confirmation: ${data.pending_confirmation.summary}`
-          : data.response;
-      setChatEntries((previous) => [
-        ...previous,
-        { role: 'assistant', text: assistantText || 'No response body returned by backend.' },
-      ]);
+
+      const assistantMsg: ChatMessage = {
+        role: 'assistant',
+        content: data.response ?? '',
+        ...(data.pending_confirmation ? { pending: data.pending_confirmation } : {}),
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+
+      if (data.pending_confirmation) {
+        setPendingConfirmation(data.pending_confirmation);
+      } else {
+        setPendingConfirmation(null);
+      }
     } catch (e) {
-      setChatError(e instanceof Error ? e.message : 'Unknown error');
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      setChatError(msg);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: 'Failed to reach backend. Is the server running?',
+        },
+      ]);
     } finally {
-      setIsSending(false);
+      setSending(false);
     }
-  }
+  }, [input, sending, sessionId]);
+
+  const handleConfirmationResolved = useCallback((response: ChatResponse) => {
+    setPendingConfirmation(null);
+    setMessages((prev) => [...prev, { role: 'assistant', content: response.response ?? '' }]);
+  }, []);
+
+  const driftCount = driftSummary?.drift_count ?? null;
+  const driftStatusLabel =
+    driftError !== null
+      ? 'Unavailable'
+      : driftSummary === null
+        ? '…'
+        : driftCount === 0
+          ? 'No drift'
+          : 'Review needed';
+  const driftStatusClass =
+    driftError !== null
+      ? 'app__card-value--error'
+      : driftCount !== null && driftCount > 0
+        ? 'app__card-value--warning'
+        : 'app__card-value--good';
 
   return (
     <div className="app">
@@ -130,20 +374,41 @@ export function App(): JSX.Element {
       <main className="app__main">
         <aside className="app__sidebar">
           <div className="app__card">
-            <h3 className="app__card-title">Governance Status</h3>
-            <p className="app__card-value app__card-value--good">Healthy</p>
+            <h3 className="app__card-title">Drift status</h3>
+            <p className={`app__card-value ${driftStatusClass}`}>{driftStatusLabel}</p>
+            {driftError !== null && (
+              <p className="app__sidebar-note">{driftError}</p>
+            )}
           </div>
           <div className="app__card">
-            <h3 className="app__card-title">Tag Coverage</h3>
-            <p className="app__card-value">86%</p>
+            <h3 className="app__card-title">Drift findings</h3>
+            <p className="app__card-value">
+              {driftSummary !== null
+                ? String(driftSummary.drift_count)
+                : driftError !== null
+                  ? '—'
+                  : '…'}
+            </p>
           </div>
           <div className="app__card">
-            <h3 className="app__card-title">PII Exposure</h3>
-            <p className="app__card-value app__card-value--warning">2 Alerts</p>
+            <h3 className="app__card-title">Entities scanned</h3>
+            <p className="app__card-value">
+              {driftSummary !== null
+                ? String(driftSummary.entity_count)
+                : driftError !== null
+                  ? '—'
+                  : '…'}
+            </p>
           </div>
           <div className="app__card">
-            <h3 className="app__card-title">Unclassified Assets</h3>
-            <p className="app__card-value">124</p>
+            <h3 className="app__card-title">Last drift scan</h3>
+            <p className="app__card-value app__card-value--compact">
+              {driftSummary?.scanned_at
+                ? new Date(driftSummary.scanned_at).toLocaleString()
+                : driftError !== null
+                  ? '—'
+                  : '…'}
+            </p>
           </div>
 
           <section className="app__status">
@@ -165,49 +430,70 @@ export function App(): JSX.Element {
 
         <div className="app__chat-container">
           <section className="app__chat">
-          <p className="app__chat-placeholder">Send a message to `POST /api/v1/chat`.</p>
+            <div className="chat__messages" id="chat-messages">
+              {messages.length === 0 && (
+                <p className="chat__empty">Ask a question about your OpenMetadata catalog…</p>
+              )}
+              {messages.map((msg, i) => (
+                <div key={i} className={`chat__bubble chat__bubble--${msg.role}`}>
+                  <span className="chat__role">{msg.role === 'user' ? 'You' : 'Agent'}</span>
+                  <div className="chat__content">{msg.content}</div>
+                  {msg.pending && (
+                    <div className="chat__pending-hint">
+                      ⚠️ Write operation pending — see confirmation dialog above.
+                    </div>
+                  )}
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
 
-          {sessionId !== null && <p className="app__chat-session">session_id: {sessionId}</p>}
-
-          <div className="app__chat-log" aria-live="polite">
-            {chatEntries.length === 0 && (
-              <p className="app__chat-empty">No messages yet. Try asking for metadata insights.</p>
-            )}
-            {chatEntries.map((entry, index) => (
-              <article
-                key={`${entry.role}-${index}`}
-                className={`app__chat-message app__chat-message--${entry.role}`}
+            <div className="chat__input-row">
+              <textarea
+                id="chat-input"
+                className="app__chat-input"
+                placeholder="Type a query…"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    void sendMessage();
+                  }
+                }}
+                rows={2}
+              />
+              <button
+                id="chat-send-btn"
+                type="button"
+                className="app__chat-send"
+                disabled={sending || !input.trim()}
+                onClick={() => void sendMessage()}
               >
-                <p className="app__chat-message-role">{entry.role}</p>
-                <pre className="app__chat-message-text">{entry.text}</pre>
-              </article>
-            ))}
-            {isSending && <p className="app__chat-loading">Sending...</p>}
-          </div>
-
-          <textarea
-            className="app__chat-input"
-            placeholder="Type a query..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            rows={3}
-          />
-          <button
-            type="button"
-            className="app__chat-send"
-            onClick={() => void sendMessage()}
-            disabled={isSending || message.trim().length === 0}
-          >
-            {isSending ? 'Sending...' : 'Send'}
-          </button>
-          {chatError !== null && <p className="app__chat-error">{chatError}</p>}
+                {sending ? 'Sending…' : 'Send'}
+              </button>
+            </div>
+            {chatError !== null && <p className="app__chat-error">{chatError}</p>}
+            {sessionId !== null && (
+              <p className="app__chat-session" data-testid="session-id">
+                session_id: {sessionId}
+              </p>
+            )}
           </section>
         </div>
       </main>
 
+      {pendingConfirmation !== null && sessionId !== null && (
+        <ConfirmationModal
+          pending={pendingConfirmation}
+          sessionId={sessionId}
+          onResolved={handleConfirmationResolved}
+        />
+      )}
+
       <footer className="app__footer">
         <p>
-          Phase 1 scaffold | Apache 2.0 |{' '}
+          Phase 2 | Apache 2.0 |{' '}
           <a href="https://github.com/GunaPalanivel/openmetadata-mcp-agent">repo</a>
         </p>
       </footer>
