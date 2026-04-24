@@ -210,6 +210,7 @@ Available tools (ONLY use these):
 - create_test_case: Create a data quality test
 - create_metric: Create a metric definition
 - root_cause_analysis: Analyze root cause of data quality failures
+- github_create_issue: Create a GitHub issue (args: repo, title, body)
 
 Given the user's message and classified intent, select the tools to call and their arguments.
 
@@ -466,6 +467,7 @@ async def hitl_gate(state: AgentState) -> AgentState:
         pending = write_proposals[0]
         state["pending_confirmation"] = pending.model_dump(mode="json")
         await _mark_suggested_if_possible(pending)
+        await set_pending(UUID(state["session_id"]), pending)
         log.info(
             "agent.hitl_gate.confirmation_required",
             tool=str(pending.tool_name),
@@ -549,9 +551,16 @@ async def execute_tool(state: AgentState) -> AgentState:
         )
 
         try:
-            result = await asyncio.to_thread(
-                om_mcp.call_tool, str(proposal.tool_name), proposal.arguments
-            )
+            if proposal.tool_name == ToolName.GITHUB_CREATE_ISSUE:
+                from copilot.clients import github_mcp
+
+                result = await asyncio.to_thread(
+                    github_mcp.call_tool, str(proposal.tool_name), proposal.arguments
+                )
+            else:
+                result = await asyncio.to_thread(
+                    om_mcp.call_tool, str(proposal.tool_name), proposal.arguments
+                )
             end = datetime.now(UTC)
             record.completed_at = end
             record.duration_ms = int((end - start).total_seconds() * 1000)
@@ -673,6 +682,16 @@ async def format_response(state: AgentState) -> AgentState:
                     "Explain what breaks if this entity is untagged (e.g., Tier 1 assets might be at risk)."
                 )
                 break
+
+    # Lineage impact report instructions
+    if intent == "lineage" and results:
+        context_parts.append(
+            "\nIMPORTANT: Lineage Impact Analysis rules:\n"
+            "1. List affected assets grouped by type (tables, dashboards, pipelines).\n"
+            "2. Highlight Tier 1 assets and cross-service dependencies.\n"
+            "3. Note any data quality test failures on downstream assets.\n"
+            "4. Be concise — no more than 10 lines."
+        )
 
     # Similarity scoring
     candidate_fqns = []

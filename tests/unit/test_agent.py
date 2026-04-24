@@ -502,6 +502,24 @@ class TestFormatResponse:
         system_call_content = messages[1]["content"]
         assert "Opinionated Governance Assistant:" in system_call_content
 
+    @patch("copilot.services.agent.openai_client.call_chat", new_callable=AsyncMock)
+    async def test_injects_lineage_report_prompt(
+        self, mock_llm: AsyncMock, base_state: AgentState
+    ) -> None:
+        """If lineage intent and results present, formatting context includes lineage impact rules."""
+        mock_llm.return_value = {"content": "ok", "tokens_prompt": 1, "tokens_completion": 1}
+        base_state["intent"] = "lineage"
+        base_state["tool_results"] = [{"nodes": [], "edges": []}]
+        await format_response(base_state)
+
+        call_kwargs = (
+            mock_llm.call_args.kwargs if mock_llm.call_args.kwargs else mock_llm.call_args[1]
+        )
+        messages = call_kwargs.get("messages") or mock_llm.call_args[0][0]
+        user_context = messages[1]["content"]
+        assert "Lineage Impact Analysis rules" in user_context
+        assert "Tier 1 assets" in user_context
+
 
 class TestRunChatTurn:
     @patch("copilot.services.agent._get_compiled_graph")

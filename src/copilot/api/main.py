@@ -16,7 +16,7 @@ Per .idea/Plan/Architecture/APIContract.md:
   - GET  /api/v1/healthz            functional in Phase 1 (boots without dependencies)
   - GET  /api/v1/metrics            functional in Phase 1 (Prometheus text format)
   - POST /api/v1/chat               functional in Phase 2 via the LangGraph agent
-  - POST /api/v1/chat/confirm       P2-19 session store + OM MCP execute on accept
+  - POST /api/v1/chat/confirm       P2-19 session-scoped pending proposal + P2-12 UI contract
   - POST /api/v1/chat/cancel        clears pending session state (P2-19)
   - GET  /api/v1/governance/drift   functional in Phase 2 (drift detection)
 """
