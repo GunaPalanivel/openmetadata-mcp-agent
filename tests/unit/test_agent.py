@@ -124,19 +124,19 @@ class TestSelectTools:
         """Queries that the router cannot handle fall through to the LLM."""
         from copilot.services.agent import select_tools
 
-        # classify intent is not handled by the router → LLM fallback
-        base_state["user_message"] = "Auto-classify PII columns in customer_db"
-        base_state["intent"] = "classify"
+        # Glossary intent has no deterministic route → LLM tool selection
+        base_state["user_message"] = "Define term X for the business glossary"
+        base_state["intent"] = "glossary"
 
         mock_llm.return_value = {
-            "tools": [{"name": "patch_entity", "arguments": {"fqn": "customer_db"}}],
-            "rationale": "classify columns",
+            "tools": [{"name": "create_glossary_term", "arguments": {"name": "Revenue"}}],
+            "rationale": "user asked for glossary",
         }
         result = await select_tools(base_state)
 
         proposals = result["tool_proposals"]
         assert len(proposals) == 1
-        assert proposals[0]["name"] == "patch_entity"
+        assert proposals[0]["name"] == "create_glossary_term"
         mock_llm.assert_called_once()
 
     @patch("copilot.services.agent.openai_client.call_chat_json", new_callable=AsyncMock)
@@ -147,9 +147,9 @@ class TestSelectTools:
         from copilot.middleware.error_envelope import LlmUnavailable
         from copilot.services.agent import select_tools
 
-        # Use a query that falls through to LLM (classify intent)
-        base_state["user_message"] = "Auto-classify PII columns in customer_db"
-        base_state["intent"] = "classify"
+        # Glossary intent falls through to LLM; simulate LLM failure
+        base_state["user_message"] = "Define term X for the business glossary"
+        base_state["intent"] = "glossary"
         mock_llm.side_effect = LlmUnavailable("timeout")
 
         result = await select_tools(base_state)
@@ -501,6 +501,24 @@ class TestFormatResponse:
         messages = call_kwargs.get("messages") or mock_llm.call_args[0][0]
         system_call_content = messages[1]["content"]
         assert "Opinionated Governance Assistant:" in system_call_content
+
+    @patch("copilot.services.agent.openai_client.call_chat", new_callable=AsyncMock)
+    async def test_injects_lineage_report_prompt(
+        self, mock_llm: AsyncMock, base_state: AgentState
+    ) -> None:
+        """If lineage intent and results present, formatting context includes lineage impact rules."""
+        mock_llm.return_value = {"content": "ok", "tokens_prompt": 1, "tokens_completion": 1}
+        base_state["intent"] = "lineage"
+        base_state["tool_results"] = [{"nodes": [], "edges": []}]
+        await format_response(base_state)
+
+        call_kwargs = (
+            mock_llm.call_args.kwargs if mock_llm.call_args.kwargs else mock_llm.call_args[1]
+        )
+        messages = call_kwargs.get("messages") or mock_llm.call_args[0][0]
+        user_context = messages[1]["content"]
+        assert "Lineage Impact Analysis rules" in user_context
+        assert "Tier 1 assets" in user_context
 
 
 class TestRunChatTurn:

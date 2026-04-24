@@ -17,8 +17,9 @@ Per .idea/Plan/Architecture/APIContract.md:
   POST /api/v1/chat/confirm    user accepts/rejects pending write proposal
   POST /api/v1/chat/cancel     user clears the session
 
-POST /api/v1/chat is functional in Phase 2; confirm/cancel use the in-memory
-session store (P2-19).
+POST /api/v1/chat runs the LangGraph agent. Confirm/cancel use the in-memory
+session-scoped pending store (P2-19) with structured error envelopes; the UI
+modal (P2-12) calls the same confirm contract.
 """
 
 from __future__ import annotations
@@ -31,10 +32,6 @@ from pydantic import BaseModel, Field
 
 from copilot.services.agent import run_chat_turn
 from copilot.services.sessions import cancel_chat_session, confirm_chat_proposal
-from copilot.services.agent import run_chat_turn
-from copilot.services.sessions import cancel_chat_session, confirm_chat_proposal
-
-log = get_logger(__name__)
 
 router = APIRouter(tags=["chat"])
 

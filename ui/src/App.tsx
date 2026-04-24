@@ -17,7 +17,7 @@ const API_URL = import.meta.env['VITE_API_URL'] ?? 'http://localhost:8000';
 
 interface AuditEntry {
   tool_name: string;
-  duration_ms?: number;
+  duration_ms?: number | null;
   success?: boolean;
   confirmed_by_user?: boolean;
 }
@@ -48,6 +48,13 @@ interface HealthStatus {
   ts: string;
 }
 
+interface ErrorEnvelope {
+  code: string;
+  message: string;
+  request_id: string;
+  ts: string;
+}
+
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -55,7 +62,7 @@ interface ChatMessage {
 }
 
 // ---------------------------------------------------------------------------
-// Risk badge component
+// Risk badge
 // ---------------------------------------------------------------------------
 
 function RiskBadge({ level }: { level: string }): JSX.Element {
@@ -97,8 +104,17 @@ function ConfirmationModal({
           accepted,
         }),
       });
-      const data = (await res.json()) as ChatResponse;
-      onResolved(data);
+      const data = (await res.json()) as ChatResponse & Partial<ErrorEnvelope>;
+      if (!res.ok) {
+        onResolved({
+          request_id: data.request_id ?? '',
+          session_id: sessionId,
+          response: `${data.code ?? 'error'}: ${data.message ?? res.statusText}`,
+          ts: new Date().toISOString(),
+        });
+        return;
+      }
+      onResolved(data as ChatResponse);
     } catch {
       onResolved({
         request_id: '',
@@ -111,7 +127,6 @@ function ConfirmationModal({
     }
   }
 
-  // Format arguments for display (redact long values)
   const argEntries = Object.entries(pending.arguments ?? {}).map(([k, v]) => {
     const val = typeof v === 'string' && v.length > 80 ? v.slice(0, 80) + '…' : String(v);
     return { key: k, value: val };
@@ -203,16 +218,16 @@ export function App(): JSX.Element {
   const [pendingConfirmation, setPendingConfirmation] =
     useState<PendingConfirmation | null>(null);
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [healthError, setHealthError] = useState<string | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   async function checkHealth(): Promise<void> {
-    setError(null);
+    setHealthError(null);
     try {
       const response = await fetch(`${API_URL}/api/v1/healthz`);
       if (!response.ok) {
@@ -221,7 +236,7 @@ export function App(): JSX.Element {
       const data = (await response.json()) as HealthStatus;
       setHealthStatus(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
+      setHealthError(e instanceof Error ? e.message : 'Unknown error');
       setHealthStatus(null);
     }
   }
@@ -231,6 +246,7 @@ export function App(): JSX.Element {
     if (!text || sending) return;
 
     setSending(true);
+    setChatError(null);
     setMessages((prev) => [...prev, { role: 'user', content: text }]);
     setInput('');
 
@@ -244,20 +260,40 @@ export function App(): JSX.Element {
         }),
       });
 
+      if (!res.ok) {
+        let errText = `Request failed (${res.status})`;
+        try {
+          const envelope = (await res.json()) as ErrorEnvelope;
+          errText = `${envelope.code}: ${envelope.message}`;
+        } catch {
+          /* ignore parse errors */
+        }
+        setChatError(errText);
+        setMessages((prev) => [
+          ...prev,
+          { role: 'assistant', content: `Could not complete request: ${errText}` },
+        ]);
+        return;
+      }
+
       const data = (await res.json()) as ChatResponse;
       setSessionId(data.session_id);
 
       const assistantMsg: ChatMessage = {
         role: 'assistant',
         content: data.response ?? '',
-        pending: data.pending_confirmation,
+        ...(data.pending_confirmation ? { pending: data.pending_confirmation } : {}),
       };
       setMessages((prev) => [...prev, assistantMsg]);
 
       if (data.pending_confirmation) {
         setPendingConfirmation(data.pending_confirmation);
+      } else {
+        setPendingConfirmation(null);
       }
-    } catch {
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      setChatError(msg);
       setMessages((prev) => [
         ...prev,
         {
@@ -270,16 +306,10 @@ export function App(): JSX.Element {
     }
   }, [input, sending, sessionId]);
 
-  const handleConfirmationResolved = useCallback(
-    (response: ChatResponse) => {
-      setPendingConfirmation(null);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: response.response ?? '' },
-      ]);
-    },
-    [],
-  );
+  const handleConfirmationResolved = useCallback((response: ChatResponse) => {
+    setPendingConfirmation(null);
+    setMessages((prev) => [...prev, { role: 'assistant', content: response.response ?? '' }]);
+  }, []);
 
   return (
     <div className="app">
@@ -300,23 +330,19 @@ export function App(): JSX.Element {
               {'\n'}ts: {healthStatus.ts}
             </pre>
           )}
-          {error !== null && (
-            <p className="app__status-error">Backend not reachable: {error}</p>
+          {healthError !== null && (
+            <p className="app__status-error">Backend not reachable: {healthError}</p>
           )}
         </section>
 
         <section className="app__chat">
           <div className="chat__messages" id="chat-messages">
             {messages.length === 0 && (
-              <p className="chat__empty">
-                Ask a question about your OpenMetadata catalog…
-              </p>
+              <p className="chat__empty">Ask a question about your OpenMetadata catalog…</p>
             )}
             {messages.map((msg, i) => (
               <div key={i} className={`chat__bubble chat__bubble--${msg.role}`}>
-                <span className="chat__role">
-                  {msg.role === 'user' ? 'You' : 'Agent'}
-                </span>
+                <span className="chat__role">{msg.role === 'user' ? 'You' : 'Agent'}</span>
                 <div className="chat__content">{msg.content}</div>
                 {msg.pending && (
                   <div className="chat__pending-hint">
@@ -353,10 +379,15 @@ export function App(): JSX.Element {
               {sending ? 'Sending…' : 'Send'}
             </button>
           </div>
+          {chatError !== null && <p className="app__chat-error">{chatError}</p>}
+          {sessionId !== null && (
+            <p className="app__chat-session" data-testid="session-id">
+              session_id: {sessionId}
+            </p>
+          )}
         </section>
       </main>
 
-      {/* HITL confirmation modal */}
       {pendingConfirmation !== null && sessionId !== null && (
         <ConfirmationModal
           pending={pendingConfirmation}

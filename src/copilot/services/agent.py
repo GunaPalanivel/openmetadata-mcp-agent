@@ -54,6 +54,7 @@ from copilot.models.chat import risk_level_for
 from copilot.models.governance_state import GovernanceState
 from copilot.observability import get_logger
 from copilot.services import governance_store
+from copilot.services.nl_router import route_query
 from copilot.services.sessions import set_pending
 from copilot.services.tool_audit import redact_tool_arguments, summarize_tool_result
 
@@ -294,19 +295,18 @@ async def select_tools(state: AgentState) -> AgentState:
     """
     log.info("agent.select_tools.start", request_id=state["request_id"], intent=state["intent"])
 
-    # --- Fast path: deterministic routing ---
     if state.get("intent") == "classify":
         proposals = _auto_classification_proposals()
         state["tool_proposals"] = proposals
         log.info(
             "agent.select_tools.classify_chain",
+            request_id=state["request_id"],
             tool_count=len(proposals),
             tools=[p["name"] for p in proposals],
         )
         return state
 
-    from copilot.services.nl_router import route_query
-
+    # --- Fast path: deterministic routing ---
     route = route_query(state["user_message"], intent=state.get("intent"))
     if route is not None:
         state["tool_proposals"] = [
@@ -318,6 +318,7 @@ async def select_tools(state: AgentState) -> AgentState:
         ]
         log.info(
             "agent.select_tools.routed",
+            request_id=state["request_id"],
             tool=route.tool_name,
             rationale=route.rationale,
         )
@@ -466,6 +467,7 @@ async def hitl_gate(state: AgentState) -> AgentState:
         pending = write_proposals[0]
         state["pending_confirmation"] = pending.model_dump(mode="json")
         await _mark_suggested_if_possible(pending)
+        await set_pending(UUID(state["session_id"]), pending)
         log.info(
             "agent.hitl_gate.confirmation_required",
             tool=str(pending.tool_name),
@@ -681,6 +683,16 @@ async def format_response(state: AgentState) -> AgentState:
                 )
                 break
 
+    # Lineage impact report instructions
+    if intent == "lineage" and results:
+        context_parts.append(
+            "\nIMPORTANT: Lineage Impact Analysis rules:\n"
+            "1. List affected assets grouped by type (tables, dashboards, pipelines).\n"
+            "2. Highlight Tier 1 assets and cross-service dependencies.\n"
+            "3. Note any data quality test failures on downstream assets.\n"
+            "4. Be concise — no more than 10 lines."
+        )
+
     # Similarity scoring
     candidate_fqns = []
     for proposal in state.get("tool_proposals", []) + ([pending] if pending else []):
@@ -740,7 +752,7 @@ def _should_execute(state: AgentState) -> Literal["execute_tool", "format_respon
     return "format_response"
 
 
-def build_graph() -> StateGraph:
+def build_graph() -> Any:
     """Build the LangGraph state machine for one chat turn.
 
     Returns:

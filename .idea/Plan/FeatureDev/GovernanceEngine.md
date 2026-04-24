@@ -190,4 +190,3 @@ Live index: [SPRINT16_GITHUB_ISSUES.md](../SPRINT16_GITHUB_ISSUES.md) (GitHub **
 - [Architecture/AgentPipeline.md](../Architecture/AgentPipeline.md) — node + FSM diagram
 - [Demo/Narrative.md](../Demo/Narrative.md) — scripted demo
 - [Project/JudgePersona.md](../Project/JudgePersona.md) — judge moments
->>>>>>> upstream/main

@@ -31,10 +31,6 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
-from copilot.observability import get_logger
-
-log = get_logger(__name__)
-
 
 @dataclass(frozen=True)
 class ToolRoute:

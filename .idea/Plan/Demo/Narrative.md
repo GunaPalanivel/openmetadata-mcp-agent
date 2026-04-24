@@ -1,77 +1,73 @@
-# Demo Narrative
+# Demo Narrative — Three Scenes
 
-## 🎬 Title: "Govern Your Data with a Conversation"
+> **Owner**: OMH-BSE (refresh with measurable outcomes from [Project/PRD.md](../Project/PRD.md)).
+> **Runtime**: ~2–3 minutes live; align with [FeatureDev/GovernanceEngine.md](../FeatureDev/GovernanceEngine.md) once HITL + drift ship.
 
-## Target Length: 2–3 minutes
+## Preconditions
+
+- OpenMetadata 1.6.x running (local Docker per [Validation/SetupGuide.md](../Validation/SetupGuide.md)).
+- Seed loaded: [`seed/customer_db.json`](../../seed/customer_db.json) + search reindex per [Demo/FailureRecovery.md](./FailureRecovery.md).
+- Agent: `uvicorn copilot.api.main:app` on `127.0.0.1`; UI on `http://127.0.0.1:3000` when wired (P2-10).
+
+## Scene 1 — Governance opener (auto-classify + HITL)
+
+**Goal (judge-visible):** NL request → agent proposes **real** `patch_entity` writes → UI shows **pending_confirmation** with FQNs and risk badge.
+
+| Step | Action                                                          | Success signal                                                              |
+| ---- | --------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 1    | In chat: “Scan `customer_db` for PII columns and suggest tags.” | Response lists tables/columns with suggested tags (Markdown table OK).      |
+| 2    | If write flow: open confirmation modal (P2-12).                 | `proposal_id`, `risk_level: hard_write`, entity FQNs visible; **Confirm** / **Cancel** call `POST /api/v1/chat/confirm` with the **same** `session_id` returned from chat. |
+| 3    | Click **Confirm**.                                              | `200` from `POST /api/v1/chat/confirm`; audit shows `patch_entity` success (write-back path per P2-19). |
+
+**HITL UI detail (P2-12):** Modal shows risk badge (`HIGH RISK` for `patch_entity`), truncated argument preview, and expiry when present — judges can verify the gate before any catalog write-back is enqueued.
+
+**Measurable:** proposal (and post-confirm write-back) includes all 3 seed spot-check columns on `sample_mysql.default.customer_db.customers`:
+- `sample_mysql.default.customer_db.customers.email`
+- `sample_mysql.default.customer_db.customers.phone`
+- `sample_mysql.default.customer_db.customers.ssn`
+
+## Scene 2 — Lineage impact (Tier story)
+
+**Goal:** Prove **downstream / Tier-1** language, not generic lineage dump.
+
+| Step | Action                                                          | Success signal                                                    |
+| ---- | --------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 1    | Ask: “What depends on `<Tier1 table FQN>` if we drop PII tags?” | Response cites upstream/downstream counts or named Tier-1 assets. |
+| 2    | (Optional) Open OM lineage graph for same FQN.                  | Narration matches OM graph within one hop tolerance.              |
+
+**Measurable:** Response mentions **at least two** downstream FQNs or a clear “none in N hops” with method stated.
+
+## Scene 3 — Trust + injection resistance
+
+**Goal:** [Project/JudgePersona.md §Moment 3](../Project/JudgePersona.md) — planted prompt-injection in seed metadata does **not** become tool args or unsanitized HTML.
+
+| Step | Action                                                                | Success signal                                                    |
+| ---- | --------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| 1    | Query the table/column documented in seed as carrying injection bait. | UI renders plain text / sanitized Markdown only.                  |
+| 2    | Inspect network or logs (redacted).                                   | No raw exfil string in LLM-bound tool args (see `prompt_safety`). |
+
+**Measurable:** `tests/security/test_prompt_injection.py` green in CI (P2-10b).
+
+## Timing budget
+
+| Scene | Target duration |
+| ----- | --------------- |
+| 1     | 60–90 s         |
+| 2     | 45–60 s         |
+| 3     | 30–45 s         |
+
+## Post-demo (catalog write-back — when P2-22 lands)
+
+Add **15 s**: Open OM entity page → show custom property **`governance_state`** (or agreed key) set by agent after approve/drift.
 
 ---
 
-## Opening Hook (10 seconds)
+## Supplement — pitch-friendly arc (optional narration)
 
-> "OpenMetadata's mission is to take the chaos out of the data practitioner's life. Today, most of that chaos is the _governance loop_ — scan, classify, confirm, apply, notify. We turned that loop into one chat sentence: 50 tables tagged, with a confirmation gate, in under a minute, for under five cents."
+**Title:** “Govern Your Data with a Conversation” (~2–3 minutes if used standalone).
 
-Mission line is verbatim from [Project/VisionAlignment.md](../Project/VisionAlignment.md). Measurable claims are from [Project/PRD.md §Criterion 1 Potential Impact](../Project/PRD.md) and verified in the demo by a stopwatch + the `/metrics` endpoint.
+**Opening hook:** OpenMetadata’s mission is to reduce the governance loop chaos — scan, classify, confirm, apply, notify — compressed into one chat sentence with a confirmation gate and measurable `/metrics` outcomes (see [Project/PRD.md](../Project/PRD.md)).
 
-## Demo Flow (90 seconds)
+**Optional beats:** NL search without OpenSearch DSL; multi-MCP GitHub issue creation; value slide citing issues #26645 / #26608; architecture diagram from [Architecture/Overview.md](../Architecture/Overview.md).
 
-### Scene 1: Natural Language Search (20s)
-
-- Show chat UI
-- Type: "Show me all Tier 1 tables with PII data"
-- Agent responds with structured table (10+ results)
-- Point: "No OpenSearch DSL needed — just ask."
-
-### Scene 2: Auto-Classification with prompt-injection defense (30s)
-
-- Type: "Auto-classify PII in the customer_db"
-- Agent scans 50 tables (timer visible), surfaces 12 PII candidates with confidence scores
-- One row in the suggestions list shows `[SUSPICIOUS]` flag — a column whose description contained an injection attempt (per the planted seed data in [Demo/FailureRecovery.md §The Frozen Seed Dataset](./FailureRecovery.md))
-- **HITL confirmation modal pops up** — shows `proposal_id`, risk badge (`HIGH RISK` for `patch_entity`), FQN list of affected columns, and ✓ Confirm / ✗ Cancel buttons
-- User clicks ✓ Confirm → modal calls `POST /chat/confirm` → tags applied via `patch_entity`
-- Point: "Five-layer defense: input neutralization, schema validation, tool allowlist, HITL gate, error envelope. We tested the same prompt-injection class that gitar-bot flagged on PR #27506."
-
-### Scene 3: Lineage Impact Analysis (20s)
-
-- Type: "What breaks if I drop the customers table?"
-- Agent shows downstream impact: dashboards, pipelines, tables
-- Highlights Tier 1 critical assets
-- Point: "Before you make changes, know the blast radius."
-
-### Scene 4: Multi-MCP (Optional, 20s)
-
-- Type: "Create a GitHub issue for each untagged PII table"
-- Agent calls OM MCP + GitHub MCP
-- Shows created issues
-- Point: "Cross-platform governance in one conversation."
-
-## Value Slide (30 seconds)
-
-> "Governance Copilot uses OpenMetadata's official AI SDK and MCP tools — no forks, no hacks.
-> It addresses issues #26645 (Multi-MCP Orchestrator) and #26608 (Data Catalog Chat).
-> Built in 7 days by a team of 4."
-
-## Architecture Slide (15 seconds)
-
-Show the Mermaid diagram from `Architecture/Overview.md`.
-
-## Closing (15 seconds)
-
-> "Try it yourself: clone, configure, chat. Governance made conversational."
-
----
-
-## Recording Tips
-
-- Resolution: 1920×1080
-- Use OM dark mode colors (verified `#7147E8` from [openmetadata-ui/.../variables.less](../../../openmetadata-ui/src/main/resources/ui/src/styles/variables.less))
-- No cursor jitter — smooth, rehearsed movements
-- Add captions for key moments
-- Keep terminal visible for setup (clone → run in <1 min)
-
-## What if the demo breaks during recording
-
-See [Demo/FailureRecovery.md](./FailureRecovery.md). Pre-recorded backup at `demo/backup_recording.mp4`; tab-switch in <10 seconds; never apologize repeatedly. The 3-rehearsal protocol (Apr 24-25) catches these issues before the final recording.
-
-## Optional: 5th demo moment for the panel
-
-If time permits and the panel asks "show me the engineering quality": tab-switch to a side terminal and curl `GET /api/v1/metrics` — show the 4 Golden Signals live, point out the same `request_id` appearing in `logs/agent.log` and the metrics labels. This is Persona 2 (Sriharsha) from [Project/JudgePersona.md](../Project/JudgePersona.md).
+**Recording tips:** 1920×1080; OM dark accent `#7147E8`; smooth cursor; captions on key moments; terminal visible for clone→run under one minute. If live demo fails, follow [Demo/FailureRecovery.md](./FailureRecovery.md) (backup clip + tab-switch under 10 seconds).
