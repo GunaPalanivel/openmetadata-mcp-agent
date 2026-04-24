@@ -12,10 +12,10 @@
 **Load + index:**
 
 1. `make om-gen-token` (or equivalent) + `.env` with OM URL and `AI_SDK_TOKEN`.
-2. `python scripts/load_seed.py` (see [seed/README.md](../../seed/README.md)).
-3. Run search reindex helper if search returns empty: `scripts/trigger_om_search_reindex.py`.
+2. `make demo-fresh` (runs `python scripts/load_seed.py --drop-existing`, then `python scripts/trigger_om_search_reindex.py`, then `make restart-agent`).
+3. If `make demo-fresh` prints a reindex warning or search is still empty after ~30-120s, run `python scripts/trigger_om_search_reindex.py` manually once OM is healthy.
 
-**Verify:** `search_metadata` returns seeded tables by keyword (e.g. `customer_db`).
+**Verify:** `search_metadata` returns seeded tables by keyword (e.g. `customer_db`) and seed search curl in [seed/README.md](../../seed/README.md) shows `50+` hits.
 
 ## Three-rehearsal protocol (P3-14)
 

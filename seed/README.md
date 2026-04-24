@@ -19,10 +19,17 @@ Frozen demo dataset for `openmetadata-mcp-agent`. Loaded into the local OpenMeta
 ## Loading
 
 ```bash
+# Preferred demo reset (same sequence as FailureRecovery pre-flight):
+make demo-fresh
+# Equivalent to:
+#   1) python scripts/load_seed.py --drop-existing
+#   2) python scripts/trigger_om_search_reindex.py
+#   3) make restart-agent
+
 # Idempotent; re-running updates timestamps without erroring.
 python scripts/load_seed.py
 
-# To drop and reload (used by `make demo-fresh`):
+# To drop and reload manually (step 1 of `make demo-fresh`):
 python scripts/load_seed.py --drop-existing
 ```
 
