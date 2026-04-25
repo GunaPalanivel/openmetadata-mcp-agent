@@ -91,6 +91,16 @@ npm run dev
 
 Use committed `package-lock.json` (`npm ci`). Full P1-14 checklist: [`ui/README.md`](../../ui/README.md).
 
+## Step 6b: Run Browser E2E (Playwright)
+
+```bash
+cd ui/
+npx playwright install chromium
+npx playwright test
+```
+
+Current coverage for ENG-16 includes `ui/e2e/chat-hitl-moment3.spec.ts` (chat round-trip, HITL modal confirm, and seeded prompt-injection Moment 3 path).
+
 ## Step 7: Start the Agent Backend
 
 ```bash

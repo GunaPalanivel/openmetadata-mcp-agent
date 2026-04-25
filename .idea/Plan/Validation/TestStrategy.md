@@ -42,6 +42,7 @@
 | Chat to search   | Type query in UI → see results            | OMH-ATL |
 | Chat to classify | Trigger classification → see tags applied | OMH-GSA |
 | Chat to lineage  | Ask impact question → see report          | OMH-GSA |
+| Chat + HITL + Moment 3 | Playwright spec `ui/e2e/chat-hitl-moment3.spec.ts` covers chat round-trip, confirmation modal, and seeded prompt-injection row neutralization | OMH-ATL |
 
 ## Running Tests
 
@@ -54,6 +55,9 @@ pytest tests/integration/ -v
 
 # E2E tests (requires running OM Docker)
 pytest tests/e2e/ -v
+
+# Browser E2E (Playwright; UI + mocked API contracts)
+cd ui && npx playwright test
 
 # Full suite
 pytest --cov=src/copilot --cov-report=html
