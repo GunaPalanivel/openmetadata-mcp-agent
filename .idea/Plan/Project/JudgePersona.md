@@ -27,6 +27,7 @@
 **Audience:** AI skeptic (+ primary hackathon security story).
 **Action:** Drive the **planted prompt-injection** path from [`seed/customer_db.json`](../../seed/customer_db.json) per [Demo/Narrative.md §Scene 3](../Demo/Narrative.md).
 **Pass:** E2E or live demo shows **sanitized** rendering + **no** execution of hidden instructions; CI **`tests/security/test_prompt_injection.py`** referenced as backstop.
+**Automation evidence:** `ui/e2e/chat-hitl-moment3.spec.ts` (`Moment 3 injection row is shown as neutralized data`) asserts the `vendor_notes.note_text` seed bait is surfaced with `[SUSPICIOUS:...]` neutralization rather than executed instructions.
 
 ## Anti-patterns (do not do these on camera)
 
