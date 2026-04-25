@@ -1,15 +1,17 @@
 # Getting Started
 
-Get the agent running on your laptop in under 5 minutes.
+Get the agent running on your laptop in under 5 minutes. **Status: Hackathon Complete.**
 
 ## Prerequisites
 
-| Tool    | Version | Notes                                      |
-| ------- | ------- | ------------------------------------------ |
-| Python  | 3.11+   | 3.12 also OK; older versions not supported |
-| Node.js | 20+     | For the UI                                 |
-| Docker  | Recent  | For OpenMetadata                           |
-| Git     | Recent  |                                            |
+| Tool    | Version | Notes                                                  |
+| ------- | ------- | ------------------------------------------------------ |
+| Python  | 3.11+   | 3.12 also OK; older versions not supported             |
+| Node.js | 20+     | LTS 20 or 22 recommended; required for the React UI   |
+| Docker  | Recent  | Docker Desktop or Docker Engine (see WSL note below)   |
+| Git     | Recent  |                                                        |
+
+> **WSL Docker alternative**: If you don't have Docker Desktop, you can run Docker Engine inside WSL. Use the WSL wrapper shown in Step 2 to start the stack.
 
 ## Step 1: Clone
 
@@ -32,7 +34,13 @@ curl -s http://localhost:8585/api/v1/system/version
 # Expected JSON includes "version"; admin liveness: curl -sf http://localhost:8586/healthcheck
 ```
 
-This uses `infrastructure/docker-compose.om.yml` (OM v1.6.2, MySQL 8, Elasticsearch 7.16). Total memory: ~6 GB. Make sure Docker Desktop has at least 8 GB allocated (Settings → Resources).
+This uses `infrastructure/docker-compose.om.yml` (OM v1.12.6, MySQL 8, Elasticsearch 7.16). Total stack stays under 8 GB. Make sure Docker Desktop has at least 8 GB allocated (Settings → Resources).
+
+**WSL Docker users** (no Docker Desktop):
+
+```bash
+wsl.exe -d Ubuntu-22.04 -- bash -lc "docker compose -f infrastructure/docker-compose.om.yml up -d"
+```
 
 To stop: `make om-stop`. To check health: `make om-health`. To tail logs: `make om-logs`.
 
@@ -49,7 +57,7 @@ The agent authenticates to OpenMetadata's MCP server using a Bot JWT.
 # Tries admin/admin first, then admin@open-metadata.org/admin on basic-auth installs.
 make om-gen-token
 
-# Custom expiry (OM 1.6.2 supports 7/30/60/90 days or Unlimited)
+# Custom expiry (supports 7/30/60/90 days or Unlimited)
 python scripts/generate_bot_jwt.py --expiry-days 60
 
 # Custom OM host
@@ -97,6 +105,16 @@ make demo
 
 UI-only checks (port `:3000`, console clean): [`ui/README.md`](../ui/README.md). `make install_dev_env` runs `npm ci` under `ui/` using the committed lockfile.
 
+### Step 5b: Load seed data
+
+After OpenMetadata is healthy and the agent is running, load the sample catalog data:
+
+```bash
+python scripts/load_seed.py --drop-existing && python scripts/trigger_om_search_reindex.py
+```
+
+This populates tables, topics, and dashboards so the agent has metadata to work with.
+
 ## Step 6: Verify
 
 In a new terminal:
@@ -105,9 +123,15 @@ In a new terminal:
 python scripts/smoke_test.py --include-om
 ```
 
-Should print `smoke: all green`. If it doesn't, check `[Troubleshooting](#troubleshooting)` below.
+Should print `smoke: all green`. If it doesn't, check [Troubleshooting](#troubleshooting) below.
 
 In the UI, click **Check backend health** — should show `status: ok`.
+
+### Step 6b: Run Playwright E2E tests
+
+```bash
+cd ui && npx playwright install chromium && npx playwright test
+```
 
 ---
 
@@ -129,6 +153,28 @@ Bot JWT is expired or wrong. Regenerate it (Step 3) and update `.env`.
 ### Docker container won't start (OOM)
 
 OpenMetadata needs ~8 GB RAM. In Docker Desktop -> Settings -> Resources, increase memory to 8 GB and restart Docker.
+
+### Docker Desktop is manually paused
+
+**Symptom**: `Error response from daemon: Docker Desktop is manually paused`
+
+**Fix**:
+
+```bash
+docker desktop restart
+```
+
+Then re-run `make om-start`.
+
+### Docker credential helper not found (WSL)
+
+**Symptom**: `error getting credentials - docker-credential-desktop.exe not found`
+
+**Fix**: Bypass the credential helper by passing a temporary config directory:
+
+```bash
+docker --config /tmp/docker-nocreds compose -f infrastructure/docker-compose.om.yml up -d
+```
 
 ### Port 8585 / 8000 / 3000 already in use
 
