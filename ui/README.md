@@ -32,13 +32,27 @@ Set `VITE_API_URL` in `ui/.env` if backend is not `http://localhost:8000`:
 VITE_API_URL=http://127.0.0.1:8000
 ```
 
+## Playwright E2E Tests
+
+```bash
+npx playwright install chromium
+npx playwright test
+```
+
+Three E2E scenarios cover:
+
+1. Chat round-trip (send message → receive agent response)
+2. HITL confirmation modal (write-tool proposals require explicit user approval)
+3. Moment 3 injection neutralization (malicious catalog content is escaped)
+
 ## Other commands
 
-| Command           | Purpose                |
-| ----------------- | ---------------------- |
-| `npm run build`   | Production build       |
-| `npm run preview` | Preview production build |
-| `npm run type-check` | TypeScript only     |
-| `npm run lint`    | ESLint                 |
+| Command              | Purpose                  |
+| -------------------- | ------------------------ |
+| `npm run build`      | Production build         |
+| `npm run preview`    | Preview production build |
+| `npm run type-check` | TypeScript only          |
+| `npm run lint`       | ESLint                   |
+| `npm run test:e2e`   | Playwright browser E2E   |
 
 Repo root **`make install_ui`** runs `npm ci` in `ui/` (requires committed `package-lock.json`).

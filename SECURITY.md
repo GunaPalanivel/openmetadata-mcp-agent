@@ -20,9 +20,9 @@ We will acknowledge within 48 hours and aim to resolve within 7 days for P0/P1 i
 
 | Version | Status |
 |---------|--------|
-| `0.1.x` (Phase 1 hackathon scaffold) | Pre-release; security fixes on best-effort basis |
-| `0.2.x` (Phase 2 core features) | Active |
-| `0.3.x` (Phase 3 polish) | Active |
+| `0.1.x` | Pre-release scaffold — unsupported |
+| `0.2.x` | Core features — superseded |
+| `0.3.x` | Hackathon final submission — **Active** |
 | Anything older | Unsupported — upgrade |
 
 ## Security architecture

@@ -2,20 +2,71 @@
 
 All notable changes to this project are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), version numbers follow [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.3.0] - 2026-04-25
 
-### Verified
-
-- **P1-14 / [#27](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/27)** — Vite dev server on `:3000` (`ui/vite.config.ts`); committed `ui/package-lock.json`; CI `ui-build` and `make install_ui` use `npm ci`; `ui/public/favicon.svg`; `ui/README.md` runbook; `@types/react-dom` aligned with React 18. PR: [#73](https://github.com/GunaPalanivel/openmetadata-mcp-agent/pull/73).
+Hackathon final submission — WeMakeDevs × OpenMetadata "Back to the Metadata" (Track T-01).
 
 ### Added
 
-- **P1-12 / [#25](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/25)** — `scripts/generate_bot_jwt.py` and `make om-gen-token` target to automate Bot JWT generation from a running OM instance. Connects to OM REST API, authenticates as admin, looks up `ingestion-bot`, and generates a configurable-expiry JWT printed to stdout for `.env` pasting. Docs updated in `docs/getting-started.md` (Step 3).
+#### Phase 2 — Core Features
 
-### Verified
+- LangGraph 6-node agent orchestrator (`classify_intent` → `select_tools` → `validate_proposal` → `hitl_gate` → `execute_tool` → `format_response`)
+- HITL confirmation gate for all write operations (`POST /api/v1/chat/confirm`)
+- Governance state machine (`GovernanceRecord` FSM with scan → suggest → approve/reject → enforce transitions)
+- Session store with TTL-based expiry for pending confirmations
+- Drift detection background polling loop (60 s interval)
+- Governance API (`GET /api/v1/governance/drift`)
+- Auto-classification pipeline (PII detection via `search` + `get_entity_details` + `patch_entity`)
+- Lineage impact analysis (3-hop upstream/downstream via `get_entity_lineage`)
+- Multi-MCP orchestration (OM MCP + GitHub MCP in a single conversation)
+- NL router with deterministic + LLM fallback intent classification
+- Similarity scoring for search result relevance
+- Prompt safety module (5-layer Module G defense: regex, HTML escape, truncation, allowlist, HITL)
 
-- **P1-01 / [#14](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/14)** — Phase 1 runtime dependencies install clean on Python 3.11.15: `data-ai-sdk[langchain]==0.1.2`, `langgraph==0.2.76`, `langchain-openai==0.2.14`, `fastapi==0.119.1`, `uvicorn[standard]==0.39.0`. All five imports resolve via `pip install -e ".[dev]"`. Feature-Dev spec: [`.idea/Plan/FeatureDev/Phase1Dependencies.md`](.idea/Plan/FeatureDev/Phase1Dependencies.md). Unblocks [#16](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/16).
-- **P1-02 / [#15](https://github.com/GunaPalanivel/openmetadata-mcp-agent/issues/15)** — Repo skeleton verified against layered architecture. All directories exist. Drift from flat to layered layout documented in [`.idea/Plan/FeatureDev/Phase1RepoSkeleton.md`](.idea/Plan/FeatureDev/Phase1RepoSkeleton.md). Layer boundaries enforced by [`tests/architecture/test_layer_imports.py`](tests/architecture/test_layer_imports.py).
+#### Phase 2 — Frontend
+
+- Full chat UI with message history, `session_id` tracking, error envelopes
+- HITL confirmation modal (`proposal_id`, `tool_name`, `risk_level`, arguments, expiry)
+- Drift dashboard sidebar (drift count, entity count, last scan timestamp)
+- Health check button with backend status display
+
+#### Phase 2 — Infrastructure
+
+- `docker-compose.om.yml` for local OpenMetadata (MySQL 8 + ES 7.16 + OM server + migrate)
+- `scripts/generate_bot_jwt.py` for automated Bot JWT generation
+- `scripts/load_seed.py` for frozen demo dataset (52 tables)
+- `scripts/trigger_om_search_reindex.py` for ES index refresh
+- `scripts/smoke_test.py` for demo-day morning validation
+- `scripts/multi_mcp_demo.py` for Phase 3 cross-platform workflow
+
+#### Phase 3 — E2E & Polish
+
+- Playwright E2E test suite (`ui/e2e/chat-hitl-moment3.spec.ts`) with 3 scenarios
+- Playwright config (`ui/playwright.config.ts`) with Chromium project + Vite webServer
+- Integration test suite (`tests/integration/`) with mock MCP + full agent pipeline
+
+### Security
+
+- 5-layer prompt-injection defense (Module G) with 5 canonical pattern tests
+- Tool allowlist (13 tools: 12 OM + 1 GitHub) enforced server-side
+- Secret redaction processor in structlog (strips `AI_SDK_TOKEN`, `OPENAI_API_KEY` from all log lines)
+- Bandit AST scanning + pip-audit CVE scanning in CI
+- Gitleaks secret scanning on every commit
+
+### Test & Quality
+
+- 333 tests passing (unit + security + architecture)
+- 87 % code coverage on `src/copilot/` (70 % CI gate)
+- 3 Playwright E2E scenarios
+- Architecture layer import enforcement tests
+- Pre-commit hooks: ruff + gitleaks + license headers
+
+### Hackathon
+
+- Submitted to WeMakeDevs × OpenMetadata "Back to the Metadata" hackathon (Apr 17–26, 2026)
+- Track T-01: MCP Ecosystem & AI Agents
+- Targets issues [#26645](https://github.com/open-metadata/OpenMetadata/issues/26645) and [#26608](https://github.com/open-metadata/OpenMetadata/issues/26608)
+- Team: The Mavericks (Guna Palanivel, Priyanka Sen, Aravind Sai, Bhawika Kumari)
 
 ## [0.1.0] - 2026-04-19
 

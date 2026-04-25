@@ -71,9 +71,12 @@ Every new source file (`.py`, `.ts`, `.tsx`, `.js`, `.jsx`) must start with the 
 
 ## Testing
 
+The test suite has 333+ tests at 87% coverage (unit, integration, security, architecture, E2E).
+
 - Add tests in the same PR as the code change.
 - Mock at boundaries (HTTP clients, third-party APIs), not internals.
 - Test outcomes (API responses, observed state), not implementation (`verify(mock).method_called()`).
+- Run Playwright E2E: `cd ui && npx playwright test`
 - `make test` must pass locally before opening the PR.
 
 ## PR process
