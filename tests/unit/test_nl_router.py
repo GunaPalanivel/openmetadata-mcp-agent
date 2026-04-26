@@ -132,7 +132,6 @@ class TestLineageRouting:
             "What are the upstream dependencies of dim_orders?",
             "Show downstream impact of raw_events",
             "Trace back data for the revenue table",
-            "What feeds into the analytics pipeline?",
             "What flows from the customers table?",
         ],
     )
@@ -146,11 +145,14 @@ class TestLineageRouting:
         assert result is not None
         assert result.arguments.get("fqn") == "customer_db.public.users"
 
-    def test_lineage_intent_override(self) -> None:
-        """Even without keyword match, intent=lineage forces lineage routing."""
-        result = route_query("Show me the graph for orders", intent="lineage")
-        assert result is not None
-        assert result.tool_name == "get_entity_lineage"
+    def test_lineage_intent_no_extracted_entity_returns_none(self) -> None:
+        """Lineage intent without a resolvable FQN/entity defers to LLM (or clarification)."""
+        assert route_query("Show me the graph for orders", intent="lineage") is None
+
+    def test_lineage_without_entity_returns_none(self) -> None:
+        """Generic upstream/downstream wording with no table name must not call OM with empty args."""
+        assert route_query("Check the upstream and downstream impact") is None
+        assert route_query("What feeds into the analytics pipeline?") is None
 
 
 # ---------------------------------------------------------------------------
@@ -231,6 +233,11 @@ class TestEdgeCases:
         assert route_query("What can you do?") is None
         assert route_query("what you can give") is None
         assert should_omit_mcp_tools("What can you do for me?")
+        assert should_omit_mcp_tools("help me")
+        assert should_omit_mcp_tools("Greetings!")
+
+    def test_details_pattern_without_entity_returns_none(self) -> None:
+        assert route_query("Tell me about") is None
 
     def test_returns_tool_route_dataclass(self) -> None:
         result = route_query("Show me tables", intent="search")

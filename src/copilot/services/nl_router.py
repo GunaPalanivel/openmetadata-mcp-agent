@@ -93,21 +93,48 @@ _ENTITY_NAME_PATTERN = re.compile(
     re.I,
 )
 
+# "What are the columns of the orders table" / "columns in the revenue table"
+_COLUMNS_OF_TABLE = re.compile(
+    r"\bcolumns?\s+(?:of|in|for)\s+the\s+([a-zA-Z_][\w.-]*)(?:\s+table)?\b",
+    re.I,
+)
+
+# Lineage / impact phrasings: "lineage of the orders table", "impact of raw_events", "from the customers table"
+_LINEAGE_ENTITY_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(
+        r"\b(?:of|from)\s+the\s+([a-zA-Z_][\w.-]*)(?:\s+table)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:of|for)\s+the\s+([a-zA-Z_][\w.-]*)(?:\s+table)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:lineage|impact|dependenc(?:y|ies)|dependencies)\s+of\s+"
+        r"([a-zA-Z_][\w_.-]+)\b",
+        re.I,
+    ),
+]
+
 # Greetings / very short non-catalog messages — do not call MCP; formatter + prompt handle these.
 _GREETING_PATTERN = re.compile(
-    r"^(?:hi+|hey+|hello+|howdy|yo+|sup|what(?:'s| is) up|hm+|\?+)[\s!?.]*$",
+    r"^(?:hi+|hey+|hello+|howdy|yo+|sup|greetings?|what(?:'s| is) up|hm+|\?+)[\s!?.]*$",
     re.I,
 )
 
 # Meta questions about the assistant (capabilities) — no OM tool; answered in the UI/LLM formatter.
 _CAPABILITY_PATTERN = re.compile(
-    r"\b(?:"
-    r"what\s+(?:can\s+you|do\s+you|are\s+you\s+able)\b|"
-    r"how\s+(?:can\s+you|do\s+you)\b|"
-    r"what\s+(?:you\s+(?:can|do)\b|(?:can|does)\s+this)\b|"
-    r"what\s+you\s+can\s+give|"
-    r"what\s+can\s+this\s+give"
-    r")\b",
+    r"(?:"
+    r"\bwhat\s+(?:can\s+you|do\s+you|are\s+you\s+able)\b|"
+    r"\bhow\s+(?:can\s+you|do\s+you)\b|"
+    r"\bwhat\s+(?:you\s+(?:can|do)|(?:can|does)\s+this)(?:\s+give)?\b|"
+    r"\bwhat\s+you\s+can\s+give\b|"
+    r"\bwhat\s+can\s+this(?:\s+give)?\b|"
+    r"\bwhat\s+does\s+this\s+do\b|"
+    r"\bwhat\s+can\s+this\s+do\b|"
+    r"\bhelp\s*me\b|"
+    r"\bwhat(?:'s| is)\s+(?:this|available)\b"
+    r")",
     re.I,
 )
 
@@ -129,10 +156,20 @@ def _extract_entity_ref(message: str) -> str | None:
     if m:
         return m.group(1)
 
+    # Column lists: "columns of the orders table"
+    m = _COLUMNS_OF_TABLE.search(message)
+    if m:
+        return m.group(1)
+
     # Fall back to a simple name reference
     m = _ENTITY_NAME_PATTERN.search(message)
     if m:
         return m.group(1)
+
+    for pat in _LINEAGE_ENTITY_PATTERNS:
+        m2 = pat.search(message)
+        if m2:
+            return m2.group(1)
 
     return None
 
@@ -170,13 +207,11 @@ def route_query(message: str, intent: str | None = None) -> ToolRoute | None:
     # 1. Lineage queries — check first because they're unambiguous
     if intent == "lineage" or _any_match(_LINEAGE_PATTERNS, text):
         entity = _extract_entity_ref(text)
-        args: dict[str, Any] = {}
-        if entity:
-            args["fqn"] = entity
-            args["entity_type"] = "table"
+        if not entity:
+            return None
         return ToolRoute(
             tool_name="get_entity_lineage",
-            arguments=args,
+            arguments={"fqn": entity, "entity_type": "table"},
             rationale="Query matches lineage pattern (upstream/downstream/depends)",
         )
 
@@ -191,13 +226,11 @@ def route_query(message: str, intent: str | None = None) -> ToolRoute | None:
     # 3. Entity details — "tell me about X", "what is X?"
     if _any_match(_DETAILS_PATTERNS, text):
         entity = _extract_entity_ref(text)
-        args = {}
-        if entity:
-            args["fqn"] = entity
-            args["entity_type"] = "table"
+        if not entity:
+            return None
         return ToolRoute(
             tool_name="get_entity_details",
-            arguments=args,
+            arguments={"fqn": entity, "entity_type": "table"},
             rationale="Query matches entity-details pattern (tell me about / what is)",
         )
 

@@ -214,6 +214,12 @@ Available tools (ONLY use these):
 
 Given the user's message and classified intent, select the tools to call and their arguments.
 
+Rules:
+- If the user asks for lineage, entity details, or column/schema information but does not name a
+  specific table, topic, or fully qualified name (FQN), return an empty "tools" list. Do not call
+  get_entity_lineage or get_entity_details with empty or placeholder arguments. Put a short note in
+  "rationale" that the user should name the entity (e.g. service.database.table).
+
 Respond with ONLY a JSON object:
 {
   "tools": [
@@ -295,6 +301,17 @@ async def select_tools(state: AgentState) -> AgentState:
     """
     log.info("agent.select_tools.start", request_id=state["request_id"], intent=state["intent"])
 
+    # Must run before the classify auto-chain: mis-classified greetings would otherwise
+    # inject search_metadata / get_entity_details and hit OM on every "hi".
+    if should_omit_mcp_tools(state["user_message"]):
+        state["tool_proposals"] = []
+        log.info(
+            "agent.select_tools.skip_om",
+            request_id=state["request_id"],
+            reason="greeting_or_capability",
+        )
+        return state
+
     if state.get("intent") == "classify":
         proposals = _auto_classification_proposals()
         state["tool_proposals"] = proposals
@@ -303,15 +320,6 @@ async def select_tools(state: AgentState) -> AgentState:
             request_id=state["request_id"],
             tool_count=len(proposals),
             tools=[p["name"] for p in proposals],
-        )
-        return state
-
-    if should_omit_mcp_tools(state["user_message"]):
-        state["tool_proposals"] = []
-        log.info(
-            "agent.select_tools.skip_om",
-            request_id=state["request_id"],
-            reason="greeting_or_capability",
         )
         return state
 
@@ -608,13 +616,46 @@ async def execute_tool(state: AgentState) -> AgentState:
             record.completed_at = end
             record.duration_ms = int((end - start).total_seconds() * 1000)
             record.success = False
-            record.error_code = "internal_error"
-            log.exception(
-                "agent.execute_tool.failed",
-                tool=str(proposal.tool_name),
-                error=str(exc),
+            err_str = str(exc).lower()
+            om_unavailable_substrings = (
+                "circuit breaker",
+                "unreachable",
+                "connection refused",
+                "actively refused",
+                "10061",
+                "timeout",
+                "mcp unavailable",
             )
-            results.append({"error": "Internal error executing tool"})
+            om_auth_substrings = (
+                "auth",
+                "401",
+                "403",
+                "unauthorized",
+            )
+            if any(s in err_str for s in om_unavailable_substrings):
+                record.error_code = "om_unavailable"
+                log.warning(
+                    "agent.execute_tool.failed",
+                    tool=str(proposal.tool_name),
+                    error=str(exc),
+                )
+                results.append({"error": str(exc)})
+            elif any(s in err_str for s in om_auth_substrings):
+                record.error_code = "om_auth_failed"
+                log.warning(
+                    "agent.execute_tool.failed",
+                    tool=str(proposal.tool_name),
+                    error=str(exc),
+                )
+                results.append({"error": str(exc)})
+            else:
+                record.error_code = "internal_error"
+                log.exception(
+                    "agent.execute_tool.failed",
+                    tool=str(proposal.tool_name),
+                    error=str(exc),
+                )
+                results.append({"error": "Internal error executing tool"})
 
         records.append(record.model_dump(mode="json"))
 
