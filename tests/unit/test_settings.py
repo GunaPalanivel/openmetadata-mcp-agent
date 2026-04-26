@@ -14,14 +14,27 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from pydantic import SecretStr
 
+import copilot.config.settings as settings_module
 from copilot.config.settings import Settings, assert_runtime_env_ready
 
 # Non-JWT-shaped value: scanners (e.g. GitGuardian) flag eyJ... three-segment tokens in PRs.
 # Runtime checks only need a non-placeholder secret (see _is_placeholder_secret).
 _UNIT_TEST_OM_SDK_TOKEN_OK = "copilot-unit-test-om-bot-credential-not-a-jwt-0123456789ab"
+
+
+class TestEnvFileLocation:
+    """Regression: Settings must load ``.env`` from repo root, not process cwd (see SC / OM MCP 401)."""
+
+    def test_model_config_env_file_is_repository_dotenv(self) -> None:
+        env_file = Settings.model_config.get("env_file")
+        assert env_file is not None
+        expected = Path(settings_module.__file__).resolve().parent.parent.parent.parent / ".env"
+        assert Path(str(env_file)).resolve() == expected.resolve()
 
 
 class TestSC1LoopbackBindOnly:
@@ -50,6 +63,11 @@ class TestSC2SecretStrTyping:
     def test_secret_value_extractable_with_explicit_call(self) -> None:
         s = Settings(_env_file=None, ai_sdk_token="real-value-here")  # type: ignore[call-arg]
         assert s.ai_sdk_token.get_secret_value() == "real-value-here"
+
+    def test_ai_sdk_token_strips_bearer_prefix(self) -> None:
+        """Users sometimes paste ``Bearer eyJ...``; SDK already sends Bearer."""
+        s = Settings(_env_file=None, ai_sdk_token="Bearer  my-jwt-value")  # type: ignore[call-arg]
+        assert s.ai_sdk_token.get_secret_value() == "my-jwt-value"
 
 
 class TestResilienceKnobs:

@@ -629,9 +629,65 @@ Rules:
 - Use bullet points for lists
 - Be concise but informative
 - If results are empty, say so clearly
+- If there are no tool results and the user sent only a greeting or a short unclear message,
+  respond with a friendly introduction and **3-4 example queries** (e.g. search tables,
+  describe an entity by FQN, lineage). Do **not** invent errors, timeouts, or internal failures.
 - Never expose internal tool names, raw JSON, or error details to the user
 - If there's a pending confirmation needed, mention it clearly
 """
+
+
+def _mcp_error_codes_from_records(tool_records: list[Any]) -> set[str]:
+    """Collect ``error_code`` values from serialized tool audit records."""
+    codes: set[str] = set()
+    for rec in tool_records:
+        if isinstance(rec, dict):
+            code = rec.get("error_code")
+            if isinstance(code, str):
+                codes.add(code)
+    return codes
+
+
+def _infer_om_issue_from_tool_results(
+    tool_results: list[Any],
+) -> Literal["auth", "unavailable", None]:
+    """Best-effort OM failure classification from raw tool error strings.
+
+    Used when ``error_code`` on audit records is missing but the executor still
+    appended ``{"error": "..."}`` (e.g. older graph state or partial serialization).
+    """
+    for item in tool_results:
+        if not isinstance(item, dict):
+            continue
+        raw = item.get("error")
+        if raw is None:
+            continue
+        err = str(raw).lower()
+        if any(
+            sub in err
+            for sub in (
+                "auth",
+                "401",
+                "403",
+                "unauthorized",
+                "invalid or expired authentication",
+                "om auth failed",
+            )
+        ):
+            return "auth"
+        if any(
+            sub in err
+            for sub in (
+                "circuit breaker",
+                "unreachable",
+                "connection refused",
+                "timed out",
+                "timeout",
+                "mcp unavailable",
+            )
+        ):
+            return "unavailable"
+    return None
 
 
 async def format_response(state: AgentState) -> AgentState:
@@ -644,6 +700,75 @@ async def format_response(state: AgentState) -> AgentState:
         Updated state with ``final_response`` as formatted Markdown.
     """
     log.info("agent.format_response.start", request_id=state["request_id"])
+
+    pipeline_err = state.get("error")
+    if isinstance(pipeline_err, str) and pipeline_err.strip():
+        log.info(
+            "agent.format_response.pipeline_error_short_circuit",
+            request_id=state["request_id"],
+            error_head=pipeline_err[:160],
+        )
+        if (
+            "Tool selection failed" in pipeline_err
+            or "Intent classification failed" in pipeline_err
+        ):
+            state["final_response"] = (
+                "The assistant could not run the catalog tool-selection step, usually because "
+                "the OpenAI request failed or returned invalid JSON. Check **OPENAI_API_KEY**, "
+                "model access, and network connectivity, then try again."
+            )
+        else:
+            state["final_response"] = (
+                "Something went wrong while preparing this turn. Check server logs for this "
+                "request. If it keeps happening, verify **OPENAI_API_KEY** and OpenMetadata "
+                "settings (**AI_SDK_HOST**, **AI_SDK_TOKEN**)."
+            )
+        return state
+
+    records = state.get("tool_records") or []
+    error_codes = _mcp_error_codes_from_records(records)
+    if "om_auth_failed" in error_codes:
+        state["final_response"] = (
+            "OpenMetadata rejected the bot credentials (**AI_SDK_TOKEN** in the repository "
+            "root `.env`). Update the JWT, then **restart the FastAPI process** so the MCP "
+            "client cache reloads. The UI health check does not call OpenMetadata; the drift "
+            "sidebar uses the same token and will stay unavailable until auth succeeds."
+        )
+        log.info("agent.format_response.om_auth_short_circuit", request_id=state["request_id"])
+        return state
+    if "om_unavailable" in error_codes:
+        state["final_response"] = (
+            "OpenMetadata MCP is unreachable from the agent (timeout, connection error, or "
+            "circuit breaker open). Confirm **AI_SDK_HOST**, **OM_MCP_HTTP_PATH**, and that "
+            "OpenMetadata is running, then try again."
+        )
+        log.info(
+            "agent.format_response.om_unavailable_short_circuit", request_id=state["request_id"]
+        )
+        return state
+
+    results_early = state.get("tool_results") or []
+    inferred = _infer_om_issue_from_tool_results(results_early)
+    if inferred == "auth":
+        state["final_response"] = (
+            "OpenMetadata rejected the bot credentials (**AI_SDK_TOKEN** in the repository "
+            "root `.env`). Update the JWT, then **restart the FastAPI process** so the MCP "
+            "client cache reloads. The UI health check does not call OpenMetadata; drift "
+            "uses the same token."
+        )
+        log.info("agent.format_response.om_auth_from_tool_results", request_id=state["request_id"])
+        return state
+    if inferred == "unavailable":
+        state["final_response"] = (
+            "OpenMetadata MCP is unreachable from the agent (timeout, connection error, or "
+            "circuit breaker open). Confirm **AI_SDK_HOST**, **OM_MCP_HTTP_PATH**, and that "
+            "OpenMetadata is running, then try again."
+        )
+        log.info(
+            "agent.format_response.om_unavailable_from_tool_results",
+            request_id=state["request_id"],
+        )
+        return state
 
     # Build context for the formatter
     context_parts = [f"User question: {state['user_message']}"]

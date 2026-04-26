@@ -292,8 +292,18 @@ def _call_tool_inner(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     except MCPToolExecutionError as exc:
         raise McpUnavailable(f"Tool {name} execution failed: {exc}") from exc
     except MCPError as exc:
+        _cause = getattr(exc, "__cause__", None)
+        from ai_sdk.exceptions import AuthenticationError  # type: ignore[import-untyped]
+
+        if isinstance(_cause, AuthenticationError):
+            raise McpAuthFailed(f"OM auth failed for tool {name}") from exc
         err_msg = str(exc).lower()
-        if "401" in err_msg or "403" in err_msg or "unauthorized" in err_msg:
+        if (
+            "401" in err_msg
+            or "403" in err_msg
+            or "unauthorized" in err_msg
+            or "invalid or expired authentication" in err_msg
+        ):
             raise McpAuthFailed(f"OM auth failed for tool {name}") from exc
         raise McpUnavailable(f"MCP error calling {name}: {exc}") from exc
     except pybreaker.CircuitBreakerError as exc:
@@ -382,7 +392,7 @@ def search_metadata_typed(params: SearchMetadataParams) -> SearchMetadataRespons
 
     # The OM server returns search hits under various shapes.  Normalise to
     # the ``hits`` / ``total`` structure our response model expects.
-    hits_raw = raw.get("hits", raw.get("data", []))
+    hits_raw = raw.get("hits", raw.get("data", raw.get("results", [])))
     if isinstance(hits_raw, dict):
         hits_raw = hits_raw.get("hits", [])
     total = raw.get("total", raw.get("totalCount", len(hits_raw)))

@@ -23,9 +23,15 @@ from __future__ import annotations
 import os
 import re
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Repo root (directory containing ``src/``). ``env_file=".env"`` is cwd-relative;
+# uvicorn started from ``ui/`` or another cwd would miss the real ``.env`` and get 401 on MCP.
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+_DOTENV_PATH = _REPO_ROOT / ".env"
 
 # Substrings that indicate the user copied .env.example without replacing secrets.
 _ENV_PLACEHOLDER_MARKERS = (
@@ -76,7 +82,7 @@ class Settings(BaseSettings):
     """
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_DOTENV_PATH),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -95,6 +101,20 @@ class Settings(BaseSettings):
         default=None,
         description="GitHub PAT for the multi-MCP demo (Phase 3 only)",
     )
+
+    @field_validator("ai_sdk_token", mode="before")
+    @classmethod
+    def _normalize_ai_sdk_token(cls, value: object) -> object:
+        """Strip BOM, quotes, and accidental ``Bearer `` prefix (SDK adds Bearer itself)."""
+        if value is None or value == "":
+            return value
+        if not isinstance(value, str):
+            return value
+        cleaned = _normalize_env_secret(value)
+        lower = cleaned.lower()
+        if lower.startswith("bearer "):
+            cleaned = cleaned[7:].strip()
+        return cleaned
 
     @field_validator("github_token", mode="before")
     @classmethod
