@@ -221,6 +221,11 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
 
     try:
         result = _call_tool_inner(name, arguments)
+    except pybreaker.CircuitBreakerError as exc:
+        elapsed_ms = int((time.monotonic() - start) * 1000)
+        log.warning("om.call_tool.failed", tool=name, elapsed_ms=elapsed_ms)
+        agent_mcp_calls_total.labels(tool_name=name, outcome="fail").inc()
+        raise McpUnavailable("OM MCP circuit breaker is open — too many recent failures") from exc
     except (McpUnavailable, McpAuthFailed):
         elapsed_ms = int((time.monotonic() - start) * 1000)
         log.warning("om.call_tool.failed", tool=name, elapsed_ms=elapsed_ms)
@@ -293,7 +298,7 @@ def _call_tool_inner(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         raise McpUnavailable(f"Tool {name} execution failed: {exc}") from exc
     except MCPError as exc:
         _cause = getattr(exc, "__cause__", None)
-        from ai_sdk.exceptions import AuthenticationError  # type: ignore[import-untyped]
+        from ai_sdk.exceptions import AuthenticationError
 
         if isinstance(_cause, AuthenticationError):
             raise McpAuthFailed(f"OM auth failed for tool {name}") from exc
@@ -308,7 +313,25 @@ def _call_tool_inner(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         raise McpUnavailable(f"MCP error calling {name}: {exc}") from exc
     except pybreaker.CircuitBreakerError as exc:
         raise McpUnavailable("OM MCP circuit breaker is open — too many recent failures") from exc
+    except (ConnectionRefusedError, ConnectionAbortedError, ConnectionResetError) as exc:
+        raise McpUnavailable(f"OM unreachable: {exc}") from exc
+    except OSError as exc:
+        # Windows often surfaces "actively refused" as OSError(WinError 10061).
+        if (
+            getattr(exc, "winerror", None) == 10061
+            or "10061" in str(exc).lower()
+            or "refused" in str(exc).lower()
+        ):
+            raise McpUnavailable(f"OM unreachable: {exc}") from exc
+        raise McpUnavailable(f"Unexpected error calling {name}: {type(exc).__name__}") from exc
     except Exception as exc:
+        import httpx
+
+        if isinstance(
+            exc,
+            (httpx.ConnectError, httpx.ReadTimeout, httpx.WriteTimeout, httpx.PoolTimeout),
+        ):
+            raise McpUnavailable(f"OM unreachable: {exc}") from exc
         raise McpUnavailable(f"Unexpected error calling {name}: {type(exc).__name__}") from exc
 
     if not result.success:

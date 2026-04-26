@@ -255,6 +255,16 @@ class TestCallTool:
         with pytest.raises(pybreaker.CircuitBreakerError):
             om_mcp._call_tool_inner("search_metadata", {"query": "test"})
 
+    @patch("copilot.clients.om_mcp._call_tool_inner")
+    def test_call_tool_maps_breaker_error_to_mcp_unavailable(self, mock_inner: MagicMock) -> None:
+        """Decorator-level breaker errors should not leak as internal_error upstream."""
+        mock_inner.side_effect = pybreaker.CircuitBreakerError(
+            "Timeout not elapsed yet, circuit breaker still open",
+        )
+
+        with pytest.raises(McpUnavailable, match="circuit breaker is open"):
+            om_mcp.call_tool("search_metadata", {"query": "test"})
+
 
 # =============================================================================
 # _call_tool_inner non-enum tool fallback tests

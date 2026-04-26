@@ -105,6 +105,25 @@ class TestClassifyIntent:
 class TestSelectTools:
     """Tests for the select_tools node."""
 
+    async def test_greeting_skips_om_and_llm(self, base_state: AgentState) -> None:
+        """Greetings do not call MCP or the tool-selection LLM."""
+        from copilot.services.agent import select_tools
+
+        base_state["user_message"] = "hi"
+        result = await select_tools(base_state)
+        assert result["tool_proposals"] == []
+
+    async def test_greeting_skips_classify_auto_chain_when_intent_misclassified(
+        self, base_state: AgentState
+    ) -> None:
+        """If the LLM labels a greeting as classify, we must not inject the OM demo tool chain."""
+        from copilot.services.agent import select_tools
+
+        base_state["intent"] = "classify"
+        base_state["user_message"] = "hi"
+        result = await select_tools(base_state)
+        assert result["tool_proposals"] == []
+
     async def test_deterministic_route_skips_llm(self, base_state: AgentState) -> None:
         """Common search queries are routed deterministically without an LLM call."""
         from copilot.services.agent import select_tools
@@ -411,6 +430,44 @@ class TestExecuteTool:
 
         assert len(result["tool_records"]) == 1
         assert result["tool_records"][0]["success"] is False
+        assert result["tool_records"][0]["error_code"] == "om_auth_failed"
+
+    @patch("copilot.services.agent.asyncio.to_thread", new_callable=AsyncMock)
+    async def test_classifies_bare_exception_with_om_keywords_as_unavailable(
+        self, mock_to_thread: AsyncMock, base_state: AgentState
+    ) -> None:
+        """Stray tool errors (e.g. circuit breaker) get om_unavailable for formatter short-circuit."""
+        mock_to_thread.side_effect = RuntimeError("OM MCP circuit breaker is open after failures")
+
+        proposal = ToolCallProposal(
+            request_id=uuid4(),
+            tool_name=ToolName.SEARCH_METADATA,
+            arguments={"query": "test"},
+            risk_level=RiskLevel.READ,
+        )
+        base_state["tool_proposals"] = [proposal]
+
+        result = await execute_tool(base_state)
+
+        assert result["tool_records"][0]["error_code"] == "om_unavailable"
+        assert "circuit breaker" in str(result["tool_results"][0]["error"]).lower()
+
+    @patch("copilot.services.agent.asyncio.to_thread", new_callable=AsyncMock)
+    async def test_bare_auth_like_exception_gets_om_auth_failed(
+        self, mock_to_thread: AsyncMock, base_state: AgentState
+    ) -> None:
+        mock_to_thread.side_effect = Exception("unauthorized: 401 from gateway")
+
+        proposal = ToolCallProposal(
+            request_id=uuid4(),
+            tool_name=ToolName.SEARCH_METADATA,
+            arguments={"query": "test"},
+            risk_level=RiskLevel.READ,
+        )
+        base_state["tool_proposals"] = [proposal]
+
+        result = await execute_tool(base_state)
+
         assert result["tool_records"][0]["error_code"] == "om_auth_failed"
 
 
