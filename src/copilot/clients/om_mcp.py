@@ -298,7 +298,7 @@ def _call_tool_inner(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         raise McpUnavailable(f"Tool {name} execution failed: {exc}") from exc
     except MCPError as exc:
         _cause = getattr(exc, "__cause__", None)
-        from ai_sdk.exceptions import AuthenticationError  # type: ignore[import-untyped]
+        from ai_sdk.exceptions import AuthenticationError
 
         if isinstance(_cause, AuthenticationError):
             raise McpAuthFailed(f"OM auth failed for tool {name}") from exc
