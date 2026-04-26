@@ -207,6 +207,17 @@ class TestGenerateToken:
         )
         assert token == "token-from-alias"
 
+    @patch("generate_bot_jwt.urllib.request.urlopen")
+    def test_token_accepts_jwt_token_camel_case(self, mock_urlopen: MagicMock) -> None:
+        """Jackson may serialize JWTAuthMechanism.jwtToken as camelCase."""
+        mock_urlopen.return_value = _mock_response({"jwtToken": "token-from-camel"})
+
+        user_data = {"id": "user-uuid-123", "name": "ingestion-bot"}
+        token = generate_bot_jwt.generate_token(
+            "http://localhost:8585", "admin-token", user_data, "30"
+        )
+        assert token == "token-from-camel"
+
 
 class TestMain:
     @patch("generate_bot_jwt.generate_token")

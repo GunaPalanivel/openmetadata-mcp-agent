@@ -418,6 +418,72 @@ class TestFormatResponse:
     """Tests for the format_response node."""
 
     @patch("copilot.services.agent.openai_client.call_chat", new_callable=AsyncMock)
+    async def test_short_circuits_on_om_auth_failed_without_llm(
+        self, mock_llm: AsyncMock, base_state: AgentState
+    ) -> None:
+        """OM auth failures must not go to the formatter LLM (prompt forbids error detail)."""
+        base_state["tool_records"] = [
+            {
+                "tool_name": "search_metadata",
+                "success": False,
+                "error_code": "om_auth_failed",
+            },
+        ]
+        base_state["tool_results"] = [{"error": "OM auth failed for tool search_metadata"}]
+
+        result = await format_response(base_state)
+
+        mock_llm.assert_not_awaited()
+        assert result["final_response"] is not None
+        assert "AI_SDK_TOKEN" in result["final_response"]
+        assert "restart" in result["final_response"].lower()
+
+    @patch("copilot.services.agent.openai_client.call_chat", new_callable=AsyncMock)
+    async def test_short_circuits_on_om_unavailable_without_llm(
+        self, mock_llm: AsyncMock, base_state: AgentState
+    ) -> None:
+        base_state["tool_records"] = [
+            {
+                "tool_name": "search_metadata",
+                "success": False,
+                "error_code": "om_unavailable",
+            },
+        ]
+        base_state["tool_results"] = [{"error": "timeout"}]
+
+        result = await format_response(base_state)
+
+        mock_llm.assert_not_awaited()
+        assert result["final_response"] is not None
+        assert "OpenMetadata MCP" in result["final_response"]
+
+    @patch("copilot.services.agent.openai_client.call_chat", new_callable=AsyncMock)
+    async def test_short_circuits_on_om_auth_from_tool_results_only(
+        self, mock_llm: AsyncMock, base_state: AgentState
+    ) -> None:
+        """Infer OM auth failure from tool result payload when error_code is absent."""
+        base_state["tool_records"] = []
+        base_state["tool_results"] = [{"error": "OM auth failed for tool search_metadata"}]
+
+        result = await format_response(base_state)
+
+        mock_llm.assert_not_awaited()
+        assert "AI_SDK_TOKEN" in (result["final_response"] or "")
+
+    @patch("copilot.services.agent.openai_client.call_chat", new_callable=AsyncMock)
+    async def test_short_circuits_on_pipeline_error_without_llm(
+        self, mock_llm: AsyncMock, base_state: AgentState
+    ) -> None:
+        base_state["error"] = "Tool selection failed: timeout from OpenAI"
+        base_state["tool_results"] = []
+
+        result = await format_response(base_state)
+
+        mock_llm.assert_not_awaited()
+        assert result["final_response"] is not None
+        assert "OPENAI_API_KEY" in result["final_response"]
+
+    @patch("copilot.services.agent.openai_client.call_chat", new_callable=AsyncMock)
     async def test_formats_response_as_markdown(
         self, mock_llm: AsyncMock, base_state: AgentState
     ) -> None:

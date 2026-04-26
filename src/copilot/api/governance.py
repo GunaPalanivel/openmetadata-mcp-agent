@@ -45,7 +45,13 @@ async def get_drift(_request: Request) -> JSONResponse:
 
     # If the last scan hit an MCP error, return 503 per APIContract
     if snapshot.error is not None:
-        log.info("governance.drift.unavailable", error=snapshot.error)
+        log.info(
+            "governance.drift.unavailable",
+            error=snapshot.error,
+            auth_failed=snapshot.auth_failed,
+        )
+        if snapshot.auth_failed:
+            return _envelope(ErrorCode.OM_AUTH_FAILED, _request)
         return _envelope(ErrorCode.OM_UNAVAILABLE, _request)
 
     payload = {

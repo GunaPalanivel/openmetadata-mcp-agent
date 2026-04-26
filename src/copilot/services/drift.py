@@ -31,7 +31,8 @@ from enum import StrEnum
 from typing import Any
 
 from copilot.clients import om_mcp
-from copilot.middleware.error_envelope import McpUnavailable
+from copilot.middleware.error_envelope import McpAuthFailed, McpUnavailable
+from copilot.models.mcp_tools import GetEntityDetailsParams
 from copilot.observability import get_logger
 
 log = get_logger(__name__)
@@ -64,6 +65,7 @@ class DriftSnapshot:
     scanned_at: str | None = None
     entity_count: int = 0
     error: str | None = None
+    auth_failed: bool = False
 
 
 # Module-level mutable state — drift results cached between polls.
@@ -217,6 +219,14 @@ async def run_drift_scan() -> DriftSnapshot:
             "search_metadata",
             {"query": "*", "limit": 100},
         )
+    except McpAuthFailed as exc:
+        log.warning("drift.scan.mcp_auth_failed", error=str(exc))
+        _latest_snapshot = DriftSnapshot(
+            scanned_at=now,
+            error="OpenMetadata authentication failed (check AI_SDK_TOKEN).",
+            auth_failed=True,
+        )
+        return _latest_snapshot
     except McpUnavailable as exc:
         log.warning("drift.scan.mcp_unavailable", error=str(exc))
         _latest_snapshot = DriftSnapshot(
@@ -225,8 +235,11 @@ async def run_drift_scan() -> DriftSnapshot:
         )
         return _latest_snapshot
 
-    # Normalise search results to a list of hits
-    hits = search_result.get("hits", search_result.get("data", []))
+    # Normalise search results to a list of hits (OM MCP may use hits, data, or results)
+    hits = search_result.get(
+        "hits",
+        search_result.get("data", search_result.get("results", [])),
+    )
     if isinstance(hits, dict):
         hits = hits.get("hits", [])
 
@@ -240,11 +253,19 @@ async def run_drift_scan() -> DriftSnapshot:
             continue
 
         try:
-            entity = await asyncio.to_thread(
-                om_mcp.call_tool,
-                "get_entity_details",
-                {"fqn": fqn, "entity_type": entity_type},
+            details = await asyncio.to_thread(
+                om_mcp.get_entity_details_typed,
+                GetEntityDetailsParams(entity_type=entity_type, fqn=fqn),
             )
+            entity = details.model_dump(by_alias=True, exclude_none=True)
+        except McpAuthFailed as exc:
+            log.warning("drift.scan.mcp_auth_failed_entity", fqn=fqn, error=str(exc))
+            _latest_snapshot = DriftSnapshot(
+                scanned_at=now,
+                error="OpenMetadata authentication failed (check AI_SDK_TOKEN).",
+                auth_failed=True,
+            )
+            return _latest_snapshot
         except McpUnavailable:
             log.warning("drift.scan.entity_fetch_failed", fqn=fqn)
             continue

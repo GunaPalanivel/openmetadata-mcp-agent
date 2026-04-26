@@ -7,9 +7,9 @@
  *  http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from "react";
 
-const API_URL = import.meta.env['VITE_API_URL'] ?? 'http://localhost:8000';
+const API_URL = import.meta.env["VITE_API_URL"] ?? "http://localhost:8000";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -25,7 +25,7 @@ interface AuditEntry {
 interface PendingConfirmation {
   proposal_id: string;
   tool_name: string;
-  risk_level: 'read' | 'soft_write' | 'hard_write';
+  risk_level: "read" | "soft_write" | "hard_write";
   rationale: string;
   arguments: Record<string, unknown>;
   expires_at: string | null;
@@ -56,7 +56,7 @@ interface ErrorEnvelope {
 }
 
 interface ChatMessage {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
   pending?: PendingConfirmation;
 }
@@ -73,13 +73,17 @@ interface DriftSummaryPayload {
 
 function RiskBadge({ level }: { level: string }): JSX.Element {
   const cls =
-    level === 'hard_write'
-      ? 'risk-badge risk-badge--hard'
-      : level === 'soft_write'
-        ? 'risk-badge risk-badge--soft'
-        : 'risk-badge risk-badge--read';
+    level === "hard_write"
+      ? "risk-badge risk-badge--hard"
+      : level === "soft_write"
+      ? "risk-badge risk-badge--soft"
+      : "risk-badge risk-badge--read";
   const label =
-    level === 'hard_write' ? 'HIGH RISK' : level === 'soft_write' ? 'MEDIUM' : 'READ';
+    level === "hard_write"
+      ? "HIGH RISK"
+      : level === "soft_write"
+      ? "MEDIUM"
+      : "READ";
   return <span className={cls}>{label}</span>;
 }
 
@@ -102,8 +106,8 @@ function ConfirmationModal({
     setLoading(true);
     try {
       const res = await fetch(`${API_URL}/api/v1/chat/confirm`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionId,
           proposal_id: pending.proposal_id,
@@ -113,9 +117,11 @@ function ConfirmationModal({
       const data = (await res.json()) as ChatResponse & Partial<ErrorEnvelope>;
       if (!res.ok) {
         onResolved({
-          request_id: data.request_id ?? '',
+          request_id: data.request_id ?? "",
           session_id: sessionId,
-          response: `${data.code ?? 'error'}: ${data.message ?? res.statusText}`,
+          response: `${data.code ?? "error"}: ${
+            data.message ?? res.statusText
+          }`,
           ts: new Date().toISOString(),
         });
         return;
@@ -123,9 +129,9 @@ function ConfirmationModal({
       onResolved(data as ChatResponse);
     } catch {
       onResolved({
-        request_id: '',
+        request_id: "",
         session_id: sessionId,
-        response: 'Failed to reach backend. Please try again.',
+        response: "Failed to reach backend. Please try again.",
         ts: new Date().toISOString(),
       });
     } finally {
@@ -134,7 +140,8 @@ function ConfirmationModal({
   }
 
   const argEntries = Object.entries(pending.arguments ?? {}).map(([k, v]) => {
-    const val = typeof v === 'string' && v.length > 80 ? v.slice(0, 80) + '…' : String(v);
+    const val =
+      typeof v === "string" && v.length > 80 ? v.slice(0, 80) + "…" : String(v);
     return { key: k, value: val };
   });
 
@@ -195,7 +202,7 @@ function ConfirmationModal({
             disabled={loading}
             onClick={() => void handleDecision(true)}
           >
-            {loading ? 'Applying…' : '✓ Confirm'}
+            {loading ? "Applying…" : "✓ Confirm"}
           </button>
           <button
             id="hitl-cancel-btn"
@@ -218,7 +225,7 @@ function ConfirmationModal({
 
 export function App(): JSX.Element {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [pendingConfirmation, setPendingConfirmation] =
@@ -226,12 +233,14 @@ export function App(): JSX.Element {
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
   const [healthError, setHealthError] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
-  const [driftSummary, setDriftSummary] = useState<DriftSummaryPayload | null>(null);
+  const [driftSummary, setDriftSummary] = useState<DriftSummaryPayload | null>(
+    null
+  );
   const [driftError, setDriftError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const loadDriftSummary = useCallback(async () => {
@@ -254,12 +263,21 @@ export function App(): JSX.Element {
       setDriftSummary(data);
     } catch (e) {
       setDriftSummary(null);
-      setDriftError(e instanceof Error ? e.message : 'Unknown error');
+      setDriftError(e instanceof Error ? e.message : "Unknown error");
     }
   }, []);
 
   useEffect(() => {
     void loadDriftSummary();
+  }, [loadDriftSummary]);
+
+  // Re-fetch drift so the sidebar recovers after OM token fixes without a full page reload
+  // (background drift scan runs every 60s on the server).
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      void loadDriftSummary();
+    }, 45_000);
+    return () => window.clearInterval(id);
   }, [loadDriftSummary]);
 
   async function checkHealth(): Promise<void> {
@@ -272,7 +290,7 @@ export function App(): JSX.Element {
       const data = (await response.json()) as HealthStatus;
       setHealthStatus(data);
     } catch (e) {
-      setHealthError(e instanceof Error ? e.message : 'Unknown error');
+      setHealthError(e instanceof Error ? e.message : "Unknown error");
       setHealthStatus(null);
     }
     void loadDriftSummary();
@@ -284,13 +302,13 @@ export function App(): JSX.Element {
 
     setSending(true);
     setChatError(null);
-    setMessages((prev) => [...prev, { role: 'user', content: text }]);
-    setInput('');
+    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    setInput("");
 
     try {
       const res = await fetch(`${API_URL}/api/v1/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: text,
           ...(sessionId ? { session_id: sessionId } : {}),
@@ -308,7 +326,10 @@ export function App(): JSX.Element {
         setChatError(errText);
         setMessages((prev) => [
           ...prev,
-          { role: 'assistant', content: `Could not complete request: ${errText}` },
+          {
+            role: "assistant",
+            content: `Could not complete request: ${errText}`,
+          },
         ]);
         return;
       }
@@ -317,9 +338,11 @@ export function App(): JSX.Element {
       setSessionId(data.session_id);
 
       const assistantMsg: ChatMessage = {
-        role: 'assistant',
-        content: data.response ?? '',
-        ...(data.pending_confirmation ? { pending: data.pending_confirmation } : {}),
+        role: "assistant",
+        content: data.response ?? "",
+        ...(data.pending_confirmation
+          ? { pending: data.pending_confirmation }
+          : {}),
       };
       setMessages((prev) => [...prev, assistantMsg]);
 
@@ -329,13 +352,13 @@ export function App(): JSX.Element {
         setPendingConfirmation(null);
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Unknown error';
+      const msg = e instanceof Error ? e.message : "Unknown error";
       setChatError(msg);
       setMessages((prev) => [
         ...prev,
         {
-          role: 'assistant',
-          content: 'Failed to reach backend. Is the server running?',
+          role: "assistant",
+          content: "Failed to reach backend. Is the server running?",
         },
       ]);
     } finally {
@@ -345,24 +368,27 @@ export function App(): JSX.Element {
 
   const handleConfirmationResolved = useCallback((response: ChatResponse) => {
     setPendingConfirmation(null);
-    setMessages((prev) => [...prev, { role: 'assistant', content: response.response ?? '' }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "assistant", content: response.response ?? "" },
+    ]);
   }, []);
 
   const driftCount = driftSummary?.drift_count ?? null;
   const driftStatusLabel =
     driftError !== null
-      ? 'Unavailable'
+      ? "Unavailable"
       : driftSummary === null
-        ? '…'
-        : driftCount === 0
-          ? 'No drift'
-          : 'Review needed';
+      ? "…"
+      : driftCount === 0
+      ? "No drift"
+      : "Review needed";
   const driftStatusClass =
     driftError !== null
-      ? 'app__card-value--error'
+      ? "app__card-value--error"
       : driftCount !== null && driftCount > 0
-        ? 'app__card-value--warning'
-        : 'app__card-value--good';
+      ? "app__card-value--warning"
+      : "app__card-value--good";
 
   return (
     <div className="app">
@@ -375,7 +401,9 @@ export function App(): JSX.Element {
         <aside className="app__sidebar">
           <div className="app__card">
             <h3 className="app__card-title">Drift status</h3>
-            <p className={`app__card-value ${driftStatusClass}`}>{driftStatusLabel}</p>
+            <p className={`app__card-value ${driftStatusClass}`}>
+              {driftStatusLabel}
+            </p>
             {driftError !== null && (
               <p className="app__sidebar-note">{driftError}</p>
             )}
@@ -386,8 +414,8 @@ export function App(): JSX.Element {
               {driftSummary !== null
                 ? String(driftSummary.drift_count)
                 : driftError !== null
-                  ? '—'
-                  : '…'}
+                ? "—"
+                : "…"}
             </p>
           </div>
           <div className="app__card">
@@ -396,8 +424,8 @@ export function App(): JSX.Element {
               {driftSummary !== null
                 ? String(driftSummary.entity_count)
                 : driftError !== null
-                  ? '—'
-                  : '…'}
+                ? "—"
+                : "…"}
             </p>
           </div>
           <div className="app__card">
@@ -406,8 +434,8 @@ export function App(): JSX.Element {
               {driftSummary?.scanned_at
                 ? new Date(driftSummary.scanned_at).toLocaleString()
                 : driftError !== null
-                  ? '—'
-                  : '…'}
+                ? "—"
+                : "…"}
             </p>
           </div>
 
@@ -418,12 +446,14 @@ export function App(): JSX.Element {
             {healthStatus !== null && (
               <pre className="app__status-output">
                 status: {healthStatus.status}
-                {'\n'}version: {healthStatus.version}
-                {'\n'}ts: {healthStatus.ts}
+                {"\n"}version: {healthStatus.version}
+                {"\n"}ts: {healthStatus.ts}
               </pre>
             )}
             {healthError !== null && (
-              <p className="app__status-error">Backend not reachable: {healthError}</p>
+              <p className="app__status-error">
+                Backend not reachable: {healthError}
+              </p>
             )}
           </section>
         </aside>
@@ -432,15 +462,23 @@ export function App(): JSX.Element {
           <section className="app__chat">
             <div className="chat__messages" id="chat-messages">
               {messages.length === 0 && (
-                <p className="chat__empty">Ask a question about your OpenMetadata catalog…</p>
+                <p className="chat__empty">
+                  Ask a question about your OpenMetadata catalog…
+                </p>
               )}
               {messages.map((msg, i) => (
-                <div key={i} className={`chat__bubble chat__bubble--${msg.role}`}>
-                  <span className="chat__role">{msg.role === 'user' ? 'You' : 'Agent'}</span>
+                <div
+                  key={i}
+                  className={`chat__bubble chat__bubble--${msg.role}`}
+                >
+                  <span className="chat__role">
+                    {msg.role === "user" ? "You" : "Agent"}
+                  </span>
                   <div className="chat__content">{msg.content}</div>
                   {msg.pending && (
                     <div className="chat__pending-hint">
-                      ⚠️ Write operation pending — see confirmation dialog above.
+                      ⚠️ Write operation pending — see confirmation dialog
+                      above.
                     </div>
                   )}
                 </div>
@@ -456,7 +494,7 @@ export function App(): JSX.Element {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     void sendMessage();
                   }
@@ -470,10 +508,12 @@ export function App(): JSX.Element {
                 disabled={sending || !input.trim()}
                 onClick={() => void sendMessage()}
               >
-                {sending ? 'Sending…' : 'Send'}
+                {sending ? "Sending…" : "Send"}
               </button>
             </div>
-            {chatError !== null && <p className="app__chat-error">{chatError}</p>}
+            {chatError !== null && (
+              <p className="app__chat-error">{chatError}</p>
+            )}
             {sessionId !== null && (
               <p className="app__chat-session" data-testid="session-id">
                 session_id: {sessionId}
@@ -493,8 +533,10 @@ export function App(): JSX.Element {
 
       <footer className="app__footer">
         <p>
-          Phase 2 | Apache 2.0 |{' '}
-          <a href="https://github.com/GunaPalanivel/openmetadata-mcp-agent">repo</a>
+          Phase 2 | Apache 2.0 |{" "}
+          <a href="https://github.com/GunaPalanivel/openmetadata-mcp-agent">
+            repo
+          </a>
         </p>
       </footer>
     </div>

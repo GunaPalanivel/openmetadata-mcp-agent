@@ -36,7 +36,7 @@ os.environ.setdefault("HOST", "127.0.0.1")
 os.environ.setdefault("PORT", "8000")
 os.environ.setdefault("LOG_LEVEL", "warning")
 
-from copilot.middleware.error_envelope import McpUnavailable
+from copilot.middleware.error_envelope import McpAuthFailed, McpUnavailable
 from copilot.services.drift import reset_state, run_drift_scan
 
 
@@ -106,6 +106,32 @@ class TestDriftEndpoint:
         assert body["drift_count"] == 0
         assert body["entity_count"] == 1
 
+    def test_drift_200_after_clean_scan_results_shape(self, client: TestClient) -> None:
+        """Drift scan accepts OM search payloads that use 'results' instead of 'hits'."""
+        mock_search = {
+            "results": [
+                {"fullyQualifiedName": "db.schema.table1", "entityType": "table"},
+            ],
+        }
+        mock_entity = {
+            "description": "A table",
+            "columns": [{"name": "id", "dataType": "INT", "tags": []}],
+            "tags": [{"tagFQN": "Tier.Tier1"}],
+        }
+
+        def mock_call_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
+            if name == "search_metadata":
+                return mock_search
+            return mock_entity
+
+        with patch("copilot.services.drift.om_mcp.call_tool", side_effect=mock_call_tool):
+            asyncio.run(run_drift_scan())
+
+        resp = client.get("/api/v1/governance/drift")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["entity_count"] == 1
+
     def test_drift_200_detects_hash_change(self, client: TestClient) -> None:
         """After baseline set, changing an entity should produce drift items."""
         mock_search = {
@@ -163,3 +189,36 @@ class TestDriftEndpoint:
         assert resp.status_code == 503
         body = resp.json()
         assert body["code"] == "om_unavailable"
+
+    def test_drift_502_when_om_auth_failed(self, client: TestClient) -> None:
+        """When OM rejects the bot token, GET drift returns om_auth_failed."""
+        with patch(
+            "copilot.services.drift.om_mcp.call_tool",
+            side_effect=McpAuthFailed("OM auth failed for tool search_metadata"),
+        ):
+            asyncio.run(run_drift_scan())
+
+        resp = client.get("/api/v1/governance/drift")
+        assert resp.status_code == 502
+        body = resp.json()
+        assert body["code"] == "om_auth_failed"
+
+    def test_drift_502_when_om_auth_failed_on_entity_fetch(self, client: TestClient) -> None:
+        """Auth failure during get_entity_details updates snapshot like search failures."""
+
+        def mock_call_tool(name: str, args: dict[str, Any]) -> dict[str, Any]:
+            if name == "search_metadata":
+                return {
+                    "results": [
+                        {"fullyQualifiedName": "db.schema.table1", "entityType": "table"},
+                    ],
+                }
+            raise McpAuthFailed("OM auth failed for tool get_entity_details")
+
+        with patch("copilot.services.drift.om_mcp.call_tool", side_effect=mock_call_tool):
+            asyncio.run(run_drift_scan())
+
+        resp = client.get("/api/v1/governance/drift")
+        assert resp.status_code == 502
+        body = resp.json()
+        assert body["code"] == "om_auth_failed"

@@ -223,7 +223,7 @@ def generate_token(
         print("FAIL: could not generate bot JWT", file=sys.stderr)
         return None
 
-    jwt_token = result.get("JWTToken") or result.get("token")
+    jwt_token = result.get("JWTToken") or result.get("jwtToken") or result.get("token")
     if not isinstance(jwt_token, str) or not jwt_token:
         print(
             f"FAIL: generateToken response missing JWTToken. Keys: {list(result.keys())}",

@@ -170,6 +170,26 @@ class TestCallTool:
             om_mcp.call_tool("search_metadata", {"query": "test"})
 
     @patch("copilot.clients.om_mcp._get_sdk_client")
+    def test_raises_mcp_auth_failed_when_mcp_error_chains_authentication_error(
+        self, mock_get_sdk: MagicMock
+    ) -> None:
+        """HTTP 401 becomes AuthenticationError; MCP wraps it without '401' in str."""
+        from ai_sdk.exceptions import AuthenticationError
+
+        from copilot.clients.om_mcp import MCPError
+
+        def _boom(*_a: Any, **_kw: Any) -> None:
+            try:
+                raise AuthenticationError()
+            except AuthenticationError as e:
+                raise MCPError(f"MCP request failed: {e}") from e
+
+        mock_get_sdk.return_value = _mock_sdk(side_effect=_boom)
+
+        with pytest.raises(McpAuthFailed):
+            om_mcp.call_tool("search_metadata", {"query": "test"})
+
+    @patch("copilot.clients.om_mcp._get_sdk_client")
     def test_raises_mcp_auth_failed_on_403(self, mock_get_sdk: MagicMock) -> None:
         """403 Forbidden also maps to McpAuthFailed."""
         from copilot.clients.om_mcp import MCPError
@@ -445,6 +465,23 @@ class TestSearchMetadataTypedFailures:
         assert result.total == 1
         assert len(result.hits) == 1
         assert result.hits[0].fully_qualified_name == "db.users"
+
+    @patch("copilot.clients.om_mcp.call_tool")
+    def test_normalises_results_key_to_hits(self, mock_call: Any) -> None:
+        """OM MCP may return search rows under 'results' instead of 'hits'."""
+        from copilot.clients.om_mcp import search_metadata_typed
+
+        mock_call.return_value = {
+            "results": [{"fullyQualifiedName": "db.widgets", "entityType": "table"}],
+            "totalFound": 1,
+        }
+        params = SearchMetadataParams(query="*")
+        result = search_metadata_typed(params)
+
+        assert isinstance(result, SearchMetadataResponse)
+        assert result.total == 1
+        assert len(result.hits) == 1
+        assert result.hits[0].fully_qualified_name == "db.widgets"
 
     @patch("copilot.clients.om_mcp.call_tool")
     def test_normalises_nested_hits_dict(self, mock_call: Any) -> None:
