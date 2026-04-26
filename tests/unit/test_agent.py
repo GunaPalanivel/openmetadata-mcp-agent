@@ -105,6 +105,14 @@ class TestClassifyIntent:
 class TestSelectTools:
     """Tests for the select_tools node."""
 
+    async def test_greeting_skips_om_and_llm(self, base_state: AgentState) -> None:
+        """Greetings do not call MCP or the tool-selection LLM."""
+        from copilot.services.agent import select_tools
+
+        base_state["user_message"] = "hi"
+        result = await select_tools(base_state)
+        assert result["tool_proposals"] == []
+
     async def test_deterministic_route_skips_llm(self, base_state: AgentState) -> None:
         """Common search queries are routed deterministically without an LLM call."""
         from copilot.services.agent import select_tools

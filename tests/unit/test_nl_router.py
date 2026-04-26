@@ -37,7 +37,7 @@ os.environ.setdefault("LOG_LEVEL", "warning")
 
 import pytest
 
-from copilot.services.nl_router import ToolRoute, route_query
+from copilot.services.nl_router import ToolRoute, route_query, should_omit_mcp_tools
 
 # ---------------------------------------------------------------------------
 # Search → search_metadata
@@ -220,6 +220,17 @@ class TestEdgeCases:
     def test_empty_input_returns_none(self) -> None:
         assert route_query("") is None
         assert route_query("  ") is None
+
+    def test_greeting_does_not_route_to_search(self) -> None:
+        assert route_query("hi") is None
+        assert route_query("?") is None
+        assert route_query("hello!") is None
+        assert should_omit_mcp_tools("hi")
+
+    def test_capability_questions_do_not_route_to_tools(self) -> None:
+        assert route_query("What can you do?") is None
+        assert route_query("what you can give") is None
+        assert should_omit_mcp_tools("What can you do for me?")
 
     def test_returns_tool_route_dataclass(self) -> None:
         result = route_query("Show me tables", intent="search")

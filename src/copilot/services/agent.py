@@ -54,7 +54,7 @@ from copilot.models.chat import risk_level_for
 from copilot.models.governance_state import GovernanceState
 from copilot.observability import get_logger
 from copilot.services import governance_store
-from copilot.services.nl_router import route_query
+from copilot.services.nl_router import route_query, should_omit_mcp_tools
 from copilot.services.sessions import set_pending
 from copilot.services.tool_audit import redact_tool_arguments, summarize_tool_result
 
@@ -303,6 +303,15 @@ async def select_tools(state: AgentState) -> AgentState:
             request_id=state["request_id"],
             tool_count=len(proposals),
             tools=[p["name"] for p in proposals],
+        )
+        return state
+
+    if should_omit_mcp_tools(state["user_message"]):
+        state["tool_proposals"] = []
+        log.info(
+            "agent.select_tools.skip_om",
+            request_id=state["request_id"],
+            reason="greeting_or_capability",
         )
         return state
 

@@ -93,6 +93,34 @@ _ENTITY_NAME_PATTERN = re.compile(
     re.I,
 )
 
+# Greetings / very short non-catalog messages — do not call MCP; formatter + prompt handle these.
+_GREETING_PATTERN = re.compile(
+    r"^(?:hi+|hey+|hello+|howdy|yo+|sup|what(?:'s| is) up|hm+|\?+)[\s!?.]*$",
+    re.I,
+)
+
+# Meta questions about the assistant (capabilities) — no OM tool; answered in the UI/LLM formatter.
+_CAPABILITY_PATTERN = re.compile(
+    r"\b(?:"
+    r"what\s+(?:can\s+you|do\s+you|are\s+you\s+able)\b|"
+    r"how\s+(?:can\s+you|do\s+you)\b|"
+    r"what\s+(?:you\s+(?:can|do)\b|(?:can|does)\s+this)\b|"
+    r"what\s+you\s+can\s+give|"
+    r"what\s+can\s+this\s+give"
+    r")\b",
+    re.I,
+)
+
+
+def should_omit_mcp_tools(message: str) -> bool:
+    """True when we should not invoke OpenMetadata MCP (greeting, capability question, etc.)."""
+    text = message.strip()
+    if not text:
+        return True
+    if _GREETING_PATTERN.match(text):
+        return True
+    return _CAPABILITY_PATTERN.search(text) is not None
+
 
 def _extract_entity_ref(message: str) -> str | None:
     """Try to extract a FQN or entity name from the message."""
@@ -132,6 +160,11 @@ def route_query(message: str, intent: str | None = None) -> ToolRoute | None:
     """
     text = message.strip()
     if not text:
+        return None
+
+    if _GREETING_PATTERN.match(text):
+        return None
+    if _CAPABILITY_PATTERN.search(text):
         return None
 
     # 1. Lineage queries — check first because they're unambiguous
