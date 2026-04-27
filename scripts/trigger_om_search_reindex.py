@@ -24,8 +24,10 @@ Usage:
     python scripts/trigger_om_search_reindex.py --as-admin
 
 Requires ``AI_SDK_TOKEN`` (Bot JWT) for the default path, or ``--as-admin``
-which logs in as admin (``OM_ADMIN_USERNAME`` / ``OM_ADMIN_PASSWORD`` in
-``.env``, defaults ``admin`` / ``admin``) to obtain a JWT with Trigger rights.
+which logs in using ``OM_ADMIN_USERNAME`` and ``OM_ADMIN_PASSWORD`` from
+``.env`` (both must be set; do not hardcode production credentials in source)
+to obtain a JWT with Trigger rights. Typical local OM quickstart uses the
+same values as the OM UI login; set them in ``.env`` (see ``.env.example``).
 
 The repo root ``.env`` is loaded automatically via ``python-dotenv``.
 """
@@ -101,8 +103,15 @@ def main() -> int:
 
     token = ""
     if args.as_admin:
-        u = os.environ.get("OM_ADMIN_USERNAME", "admin")
-        p = os.environ.get("OM_ADMIN_PASSWORD", "admin")
+        u = os.environ.get("OM_ADMIN_USERNAME", "").strip()
+        p = os.environ.get("OM_ADMIN_PASSWORD", "").strip()
+        if not u or not p:
+            print(
+                "ERROR: --as-admin requires OM_ADMIN_USERNAME and OM_ADMIN_PASSWORD "
+                "in .env (same credentials as OM UI admin login). See .env.example.",
+                file=sys.stderr,
+            )
+            return 1
         print("reindex: logging in as admin for SearchIndexingApplication trigger …")
         token = _admin_login_jwt(args.om_url, u, p) or ""
         if not token:
