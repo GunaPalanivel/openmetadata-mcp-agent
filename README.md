@@ -9,8 +9,16 @@
   <a href="https://github.com/GunaPalanivel/openmetadata-mcp-agent/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/GunaPalanivel/openmetadata-mcp-agent/ci.yml?branch=main&style=for-the-badge"/></a>
   <a href="https://github.com/GunaPalanivel/openmetadata-mcp-agent/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=for-the-badge"/></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-blue?style=for-the-badge&logo=python"/>
-  <img alt="Tests" src="https://img.shields.io/badge/tests-333%20passed-brightgreen?style=for-the-badge"/>
+  <img alt="Tests" src="https://img.shields.io/badge/tests-353%20passed-brightgreen?style=for-the-badge"/>
   <img alt="Coverage" src="https://img.shields.io/badge/coverage-87%25-brightgreen?style=for-the-badge"/>
+</p>
+
+### Quick proof (local stack)
+
+<p align="center">
+  <img src="assets/proof-quick-230228.png" width="48%" alt="Drift + backend health — local dev UI"/>
+  &nbsp;
+  <img src="assets/proof-quick-230643.png" width="48%" alt="Chat session — local dev UI"/>
 </p>
 
 ---
@@ -34,18 +42,31 @@ Agent: Done. Tagged 12 columns across 5 tables in 47s. Cost: $0.04.
 
 Built for the **WeMakeDevs x OpenMetadata "Back to the Metadata" hackathon** (Apr 17-26, 2026), Track T-01: MCP Ecosystem & AI Agents. Targets upstream issues [#26645](https://github.com/open-metadata/OpenMetadata/issues/26645) (Multi-MCP Orchestrator) and [#26608](https://github.com/open-metadata/OpenMetadata/issues/26608) (Conversational Data Catalog Chat App).
 
+**Primary differentiators in code:** human-in-the-loop writes, prompt-injection defenses, and full use of OpenMetadata’s MCP surface—not a thin search wrapper. **Optional** second MCP: GitHub (`github_create_issue`) when `GITHUB_TOKEN` is configured; the OM catalog path works without it.
+
+### Shipped vs roadmap (source of truth for judges)
+
+Internal task trackers and judge-style notes can trail the codebase during a sprint; keep them under `local-reference/` (gitignored) if you use them locally. This table tracks what you can **verify from the repo today**.
+
+| Area                                                                | Status                                                                                                                                                                                |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **FastAPI agent** (`POST /api/v1/chat`, confirm/cancel, `/metrics`) | **Shipped** — entry point is `uvicorn copilot.api.main:app` (see [Quick Start](#quick-start)). Root [`main.py`](main.py) only prints this command; it is **not** the app.             |
+| **OpenMetadata MCP — 12 tools**                                     | **Shipped** via `data-ai-sdk` — see [§ All 12 MCP tools](#all-12-mcp-tools-exercised) and [`src/copilot/models/mcp_tools.py`](src/copilot/models/mcp_tools.py).                       |
+| **Auto-classify, lineage NL routing, HITL**                         | **Shipped** in [`src/copilot/services/`](src/copilot/services/) + React UI (confirm modal). Effectiveness depends on a healthy OM instance + search index.                            |
+| **GitHub MCP**                                                      | **Optional** — wire is present; set `GITHUB_TOKEN` (and supporting env per [`settings.py`](src/copilot/config/settings.py)) to enable `github_create_issue` in the same chat session. |
+
 ### Key capabilities
 
-| Capability                   | What it does                                                 |
-| ---------------------------- | ------------------------------------------------------------ |
-| **Catalog search**           | Natural-language queries against OpenMetadata's 12 MCP tools |
-| **Auto-classification**      | Scans tables, identifies PII columns, suggests tags          |
-| **Lineage impact analysis**  | Traces 3-hop upstream/downstream lineage before any write    |
-| **HITL confirmation gate**   | Every write operation requires explicit human approval       |
-| **Prompt-injection defense** | 5-layer Module G defense neutralizes injected instructions   |
-| **Drift detection**          | Background polling detects governance tag drift              |
-| **Multi-MCP orchestration**  | OM MCP + GitHub MCP in a single conversation turn            |
-| **Structured observability** | request_id propagation, JSON logs, Prometheus metrics        |
+| Capability                   | What it does                                                                            |
+| ---------------------------- | --------------------------------------------------------------------------------------- |
+| **Catalog search**           | Natural-language queries against OpenMetadata's 12 MCP tools                            |
+| **Auto-classification**      | Scans tables, identifies PII columns, suggests tags                                     |
+| **Lineage impact analysis**  | Traces 3-hop upstream/downstream lineage before any write                               |
+| **HITL confirmation gate**   | Every write operation requires explicit human approval                                  |
+| **Prompt-injection defense** | 5-layer Module G defense neutralizes injected instructions                              |
+| **Drift detection**          | Background polling detects governance tag drift                                         |
+| **Multi-MCP orchestration**  | OM MCP always; **GitHub MCP optional** (`GITHUB_TOKEN`) for issue workflows in one turn |
+| **Structured observability** | request_id propagation, JSON logs, Prometheus metrics                                   |
 
 ---
 
@@ -113,7 +134,7 @@ flowchart LR
 | **Resilience**    | httpx + tenacity + pybreaker + slowapi             | Timeout + retry + circuit breaker + rate limit on every external call    |
 | **Observability** | structlog (JSON) + prometheus-client               | request_id propagation, 4 Golden Signals, token usage metrics            |
 | **Frontend**      | React 18 + Vite 5 + TypeScript 5 (strict)          | No `any`, no MUI; HITL confirmation modal, drift dashboard               |
-| **Testing**       | pytest (333 tests, 87% coverage) + Playwright E2E  | Unit + security + architecture + browser E2E                             |
+| **Testing**       | pytest (353 tests, 87% coverage) + Playwright E2E  | Unit + security + architecture + browser E2E                             |
 | **Lint/Type**     | ruff + mypy --strict                               | Zero warnings policy                                                     |
 | **Security**      | pip-audit + bandit + gitleaks + pre-commit         | CVE scan + AST scan + secret scan on every commit                        |
 | **CI**            | GitHub Actions (SHA-pinned, read-all permissions)  | 10 jobs: path-guard, lint, typecheck, tests, security, secrets, UI build |
@@ -123,7 +144,7 @@ flowchart LR
 
 ## All 12 MCP Tools Exercised
 
-We use the official `data-ai-sdk`'s typed `MCPTool` enum for the 7 wrapped tools, and `client.mcp.call_tool(name, args)` for the 5 string-callable ones.
+We use the official `data-ai-sdk`'s typed `MCPTool` enum for the 7 wrapped tools, and `client.mcp.call_tool(name, args)` for the 5 string-callable ones. Implementation details: [`mcp_tools.py`](src/copilot/models/mcp_tools.py), [`om_mcp.py`](src/copilot/clients/om_mcp.py), and [Architecture](docs/architecture.md).
 
 | #   | Tool                   | How we use it                                |
 | --- | ---------------------- | -------------------------------------------- |
@@ -143,6 +164,14 @@ We use the official `data-ai-sdk`'s typed `MCPTool` enum for the 7 wrapped tools
 ---
 
 ## Quick Start
+
+**Production backend (this is the only FastAPI app judges should run):**
+
+```bash
+uvicorn copilot.api.main:app --host 127.0.0.1 --port 8000
+```
+
+(`make demo` uses the same module and also starts the Vite UI when `ui/` is present.)
 
 ```bash
 # 1. Clone
@@ -226,9 +255,9 @@ openmetadata-mcp-agent/
 │   └── observability/   ← structlog + prometheus + redaction processor
 ├── tests/
 │   ├── unit/            ← 300+ function-level tests
+│   ├── integration/     ← Live OpenMetadata probes (`pytest -m integration`; needs OM up)
 │   ├── security/        ← Prompt injection, SC-N claim verification
-│   ├── architecture/    ← Layer separation enforcement
-│   └── integration/     ← Agent + mock MCP pipeline tests
+│   └── architecture/    ← Layer separation enforcement
 ├── ui/                  ← React 18 + Vite 5 chat UI + Playwright E2E
 ├── seed/                ← Frozen demo dataset (52 tables incl. injection targets)
 ├── scripts/             ← seed loader, smoke test, JWT generator, reindex trigger
@@ -236,7 +265,7 @@ openmetadata-mcp-agent/
 ├── docs/                ← Public documentation
 ├── assets/              ← Architecture + sequence diagrams
 ├── .github/workflows/   ← CI (10 jobs) + auto-reviewer assignment
-├── .idea/Plan/          ← Published engineering planning docs
+├── local-reference/     ← optional local-only (gitignored): judge notes, extra audits
 ├── CLAUDE.md            ← Architecture contract for AI agents
 └── Makefile             ← 25+ targets for the full dev lifecycle
 ```
@@ -245,16 +274,16 @@ openmetadata-mcp-agent/
 
 ## Test & Quality Summary
 
-| Metric                 | Value                                                                                                     |
-| ---------------------- | --------------------------------------------------------------------------------------------------------- |
-| **Total tests**        | 333                                                                                                       |
-| **Test coverage**      | 87% (`src/copilot/`)                                                                                      |
-| **Coverage gate**      | 70% minimum (CI-enforced)                                                                                 |
-| **Playwright E2E**     | 3 scenarios (chat, HITL, injection defense)                                                               |
-| **Security tests**     | 5 canonical injection patterns + truncation + edge cases                                                  |
-| **Architecture tests** | Layer import enforcement (Three Laws Law 1)                                                               |
-| **CI jobs**            | 10 (path-guard, lint, typecheck, tests, security scan, secret scan, UI build, integration, auto-reviewer) |
-| **Pre-commit hooks**   | ruff + gitleaks + license headers + hygiene                                                               |
+| Metric                 | Value                                                                                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Total tests**        | 353 (unit + security + architecture; integration optional)                                                                                                                                 |
+| **Test coverage**      | 87% (`src/copilot/`)                                                                                                                                                                       |
+| **Coverage gate**      | 70% minimum (CI-enforced)                                                                                                                                                                  |
+| **Playwright E2E**     | 3 scenarios (chat, HITL, injection defense)                                                                                                                                                |
+| **Security tests**     | 5 canonical injection patterns + truncation + edge cases                                                                                                                                   |
+| **Architecture tests** | Layer import enforcement (Three Laws Law 1)                                                                                                                                                |
+| **CI jobs**            | 10 (path-guard, lint, typecheck, unit+security+arch tests, security scan, secret scan, UI build; optional `test-integration` on `main` when `OM_INTEGRATION_TESTS_ENABLED`, auto-reviewer) |
+| **Pre-commit hooks**   | ruff + gitleaks + license headers + hygiene                                                                                                                                                |
 
 ---
 
@@ -273,26 +302,20 @@ openmetadata-mcp-agent/
 | SC-9  | No pickle/eval/exec/os.system                    | `test_layer_imports.py` + bandit |
 | SC-10 | No upstream OM code modifications                | Architecture constraint          |
 
-Full threat model: [`.idea/Plan/Security/ThreatModel.md`](.idea/Plan/Security/ThreatModel.md).
+Full threat model summary: [`SECURITY.md`](SECURITY.md).
 
 ---
 
-## Internal Planning Docs (`.idea/Plan/`)
+## Documentation map (in-repo)
 
-This repo publishes most of its internal planning docs as a strong signal of engineering maturity:
+- [`docs/architecture.md`](docs/architecture.md) — system context and diagrams
+- [`docs/api.md`](docs/api.md) — FastAPI surface
+- [`docs/runbook.md`](docs/runbook.md) — operations and failure recovery
+- [`SECURITY.md`](SECURITY.md) — threats, SC claims, reporting
+- [`docs/hackathon-submission.md`](docs/hackathon-submission.md) — WeMakeDevs T-01 submission checklist
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — branches, commits, reviews
 
-- [**PRD**](.idea/Plan/Project/PRD.md) — Product Requirements Document
-- [**Discovery**](.idea/Plan/Project/Discovery.md) — Success metrics, sensitive data, availability
-- [**NFRs**](.idea/Plan/Project/NFRs.md) — Non-functional requirements + The 5 Things AI Never Adds
-- [**ADRs**](.idea/Plan/Project/Decisions.md) — Architecture Decision Records (ADR-01..08)
-- [**Risk Register**](.idea/Plan/Project/RiskRegister.md) — Top 10 risks + mitigations
-- [**Threat Model**](.idea/Plan/Security/ThreatModel.md) — SC-N claims, trust boundaries
-- [**Prompt Injection Defense**](.idea/Plan/Security/PromptInjectionMitigation.md) — Module G 5-layer defense
-- [**API Contract**](.idea/Plan/Architecture/APIContract.md) — Full FastAPI surface
-- [**Data Model**](.idea/Plan/Architecture/DataModel.md) — Pydantic model shapes
-- [**Quality Gates**](.idea/Plan/Validation/QualityGates.md) — Per-phase exit criteria
-- [**Runbook**](.idea/Plan/Project/Runbook.md) — 8 failure modes + recovery procedures
-- [**Demo Narrative**](.idea/Plan/Demo/Narrative.md) — 3-scene hackathon demo script
+Extended planning (PRDs, NFRs, JudgePersona-style rubrics) can be maintained **locally** under `local-reference/` (see `.gitignore`) and are **not** required to build or run the agent.
 
 ---
 
@@ -304,7 +327,7 @@ Building this project in 9 days taught us:
 - **LLM agents need defense-in-depth, not just prompt engineering** — we implemented 5 independent layers because no single layer catches everything. The planted injection test proved Layer 1 (regex) alone would have missed obfuscated variants.
 - **HITL is a feature, not a limitation** — judges and real users trust the system _more_ when writes require confirmation. The modal is the product's strongest UX signal.
 - **Observability from day 1 pays for itself** — `request_id` propagation and structured JSON logs made debugging the LangGraph state machine across 6 nodes tractable on a compressed timeline.
-- **Publish your planning docs** — making ADRs, threat model, and runbook public demonstrates engineering maturity that code alone cannot show. Several of our 40+ published planning documents were directly referenced during review.
+- **Document in `docs/` + `SECURITY.md`** — ship what helps operators and reviewers; keep long-form judge or hackathon scratch notes locally under `local-reference/` when you don’t want them in git.
 
 ---
 

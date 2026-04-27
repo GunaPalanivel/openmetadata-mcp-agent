@@ -4,12 +4,12 @@ Get the agent running on your laptop in under 5 minutes. **Status: Hackathon Com
 
 ## Prerequisites
 
-| Tool    | Version | Notes                                                  |
-| ------- | ------- | ------------------------------------------------------ |
-| Python  | 3.11+   | 3.12 also OK; older versions not supported             |
-| Node.js | 20+     | LTS 20 or 22 recommended; required for the React UI   |
-| Docker  | Recent  | Docker Desktop or Docker Engine (see WSL note below)   |
-| Git     | Recent  |                                                        |
+| Tool    | Version | Notes                                                |
+| ------- | ------- | ---------------------------------------------------- |
+| Python  | 3.11+   | 3.12 also OK; older versions not supported           |
+| Node.js | 20+     | LTS 20 or 22 recommended; required for the React UI  |
+| Docker  | Recent  | Docker Desktop or Docker Engine (see WSL note below) |
+| Git     | Recent  |                                                      |
 
 > **WSL Docker alternative**: If you don't have Docker Desktop, you can run Docker Engine inside WSL. Use the WSL wrapper shown in Step 2 to start the stack.
 
@@ -34,7 +34,7 @@ curl -s http://localhost:8585/api/v1/system/version
 # Expected JSON includes "version"; admin liveness: curl -sf http://localhost:8586/healthcheck
 ```
 
-This uses `infrastructure/docker-compose.om.yml` (OM v1.12.6, MySQL 8, Elasticsearch 7.16). Total stack stays under 8 GB. Make sure Docker Desktop has at least 8 GB allocated (Settings → Resources).
+This uses [`infrastructure/docker-compose.om.yml`](../infrastructure/docker-compose.om.yml) (OpenMetadata server image pinned there—currently `docker.getcollate.io/openmetadata/server:latest`; MySQL 8; Elasticsearch). Total stack stays under 8 GB. Make sure Docker Desktop has at least 8 GB allocated (Settings → Resources).
 
 **WSL Docker users** (no Docker Desktop):
 
@@ -194,4 +194,6 @@ This is expected for the first push because some dependencies need to actually i
 - See [`docs/api.md`](api.md) for the FastAPI surface.
 - See [`docs/runbook.md`](runbook.md) for operations.
 
-For internal planning docs (PRD, ADRs, NFRs, threat model, etc.), browse [`.idea/Plan/`](../.idea/Plan/README.md).
+Deeper design notes: [`docs/architecture.md`](architecture.md), [`SECURITY.md`](../SECURITY.md), [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+
+Hackathon submitters: [Track T-01 submission checklist](hackathon-submission.md).
