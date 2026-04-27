@@ -201,7 +201,7 @@ AI_SDK_HOST=http://localhost:8585
 AI_SDK_TOKEN=paste-your-bot-jwt-here
 
 # OpenAI (LLM provider)
-OPENAI_API_KEY=sk-paste-your-key-here
+OPENAI_API_KEY=sk-om_copilot_localdev_changeme_00
 OPENAI_MODEL=gpt-4o-mini
 
 # GitHub MCP (Phase 3 only — leave blank for v1)

@@ -39,6 +39,10 @@ Task.md
 # Local issue tooling / PR body drafts (not required for build; Plan stays tracked)
 scripts/create_sixteen_engineering_issues.py
 pr_body_*.md
+.pr-housekeeping-body.md
+
+# Optional local-only tree: judge rubrics, hackathon scratch, extra audits (not for GitHub)
+local-reference/
 
 # ---------------------------------------------------------------------------
 # Python

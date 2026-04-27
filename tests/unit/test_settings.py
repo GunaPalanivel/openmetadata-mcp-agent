@@ -119,7 +119,7 @@ class TestRuntimeEnvValidation:
             _env_file=None,  # type: ignore[call-arg]
             ai_sdk_host="http://localhost:8585",
             ai_sdk_token=_UNIT_TEST_OM_SDK_TOKEN_OK,
-            openai_api_key="sk-paste-your-key-here",
+            openai_api_key="sk-om_copilot_localdev_changeme_00",
         )
         with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
             assert_runtime_env_ready(s)
@@ -130,7 +130,7 @@ class TestRuntimeEnvValidation:
             _env_file=None,  # type: ignore[call-arg]
             ai_sdk_host="http://localhost:8585",
             ai_sdk_token="paste-your-bot-jwt-here",
-            openai_api_key="sk-paste-your-key-here",
+            openai_api_key="sk-om_copilot_localdev_changeme_00",
         )
         assert_runtime_env_ready(s)  # does not raise
 
