@@ -39,7 +39,7 @@ classifiers = [
 
 dependencies = [
     # Official OpenMetadata Python SDK
-    "data-ai-sdk==0.1.2",
+    "data-ai-sdk==0.2.0",
 
     # LangGraph orchestration
     "langgraph>=1.0.10,<2.0.0",
